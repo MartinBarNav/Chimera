@@ -1,0 +1,91 @@
+// Task to compile Chimera-specific Java files
+task buildChimera(type: Exec) {
+    description 'Compiles Chimera Java files into build/chimera directory'
+
+    def javaFiles = fileTree('src/com/saterskog/cell_lab')
+            .include('**/*.java')
+            .collect { it.absolutePath }
+
+    file('build/chimera').mkdirs()
+    commandLine 'javac', '-d', 'build/chimera', *javaFiles
+}
+
+// Task to compile all Java files (temporary pre-compilation for Chimera)
+task buildAll(type: Exec) {
+    description 'Compiles all Java files into build/chimera directory'
+
+    def javaFiles = fileTree('src/com/saterskog')
+            .include('**/*.java')
+            .collect { it.absolutePath }
+
+    file('build/chimera').mkdirs()
+
+    commandLine 'javac', '-d', 'build/chimera', *javaFiles
+}
+
+
+task buildMod {
+    description 'Builds the mod by depending on buildAll'
+    dependsOn buildAll
+}
+
+// Task to generate DEX file for mod classes Dont mind the debugging. I'm losing my mind over here.
+// Hey i've never used gradle before. I don't get the appeal, quite frankly, the syntax is hella ugly...
+task getDex(type: Exec) {
+    description 'Converts mod class files to DEX format'
+    dependsOn buildMod
+
+    workingDir file('tools')
+    def classDir = file('build/chimera/com/saterskog')
+    def outputDir = file('build/dex_output')
+
+
+    inputs.dir(classDir)
+    outputs.dir(outputDir)
+
+    doFirst {
+
+        def classes = fileTree(classDir).include('**/*.class').collect { it.absolutePath }
+        println "Found class files: ${classes ?: 'None'}"
+
+        outputDir.mkdirs()
+        fileTree(outputDir).each { it.delete() }
+
+        if (!classes) {
+            throw new GradleException("No class files found in ${classDir.absolutePath}")
+        }
+
+        commandLine './d8', '--output', outputDir, *classes
+    }
+}
+
+// Task to disassemble DEX into Smali
+task getSmali(type: Exec) {
+    description 'Disassembles DEX file into Smali code'
+    dependsOn getDex
+
+    workingDir file('tools')
+
+    //Why the HELL is dir simply 'd' but output is '-o' with a DASH?? FFFFFFFfSSSSSSSSfffffffffs
+    commandLine 'java', '-jar', 'baksmali-2.5.2.jar', 'd',
+            '../build/dex_output/classes.dex', '-o', '../build/smali'
+}
+
+//TODO: Work with locally installed APK-tool, don't just assume it's globally installed.
+//TODO: also, add compatibility for other cell lab APKs.
+//This is really hard-codey, I just want to go to sleep rn, i'll fix it later.
+task deAPK(type: Exec){
+    workingDir file('saterskog')
+
+    commandLine 'apktool','d','Project Enzyme.apk'
+}
+
+
+
+// Task to clean the build directory
+task cleanBuild(type: Delete) {
+    description 'Deletes the build directory'
+    delete 'build'
+}
+
+
