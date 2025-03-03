@@ -66,7 +66,6 @@ task getSmali(type: Exec) {
 
     workingDir file('tools')
 
-    //Why the HELL is dir simply 'd' but output is '-o' with a DASH?? FFFFFFFfSSSSSSSSfffffffffs
     commandLine 'java', '-jar', 'baksmali-2.5.2.jar', 'd',
             '../build/dex_output/classes.dex', '-o', '../build/smali'
 }
@@ -77,15 +76,22 @@ task getSmali(type: Exec) {
 task deAPK(type: Exec){
     workingDir file('saterskog')
 
-    commandLine 'apktool','d','Project Enzyme.apk'
+    commandLine 'apktool','d','Project Enzyme.apk','-o','./apk'
 }
 
-
+task patchAPK(type: Exec){
+    commandLine 'java','-jar','./tools/patcher.jar','saterskog/apk/smali','saterskog/patch.chimera'
+}
 
 // Task to clean the build directory
 task cleanBuild(type: Delete) {
     description 'Deletes the build directory'
     delete 'build'
+}
+
+task cleanAPK(type: Delete) {
+    description 'Deletes the apk decompilation directories'
+    delete 'saterskog/apk'
 }
 
 
