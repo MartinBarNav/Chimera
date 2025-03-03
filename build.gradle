@@ -79,8 +79,13 @@ task deAPK(type: Exec){
     commandLine 'apktool','d','Project Enzyme.apk','-o','./apk'
 }
 
+//This should never be called alone, APK will have runtime errors if ChimeraHooks.smali isn't included inside
 task patchAPK(type: Exec){
     commandLine 'java','-jar','./tools/patcher.jar','saterskog/apk/smali','saterskog/patch.chimera'
+}
+
+task APK(type: Exec){
+    commandLine 'apktool','b','saterskog/apk','-o','build/apk/mod.apk'
 }
 
 // Task to clean the build directory
@@ -88,6 +93,34 @@ task cleanBuild(type: Delete) {
     description 'Deletes the build directory'
     delete 'build'
 }
+
+// This will find source files (.java) for mods in com/saterskog/mods and add them to mods.txt
+// Do note that only classes annotated @ChimeraMod will be loaded as mods.
+// There is a hacky workaround maybe using static blocks but that's some nerd shit
+//TODO: make a task that can find mod binaries (.jar?), convert to smali and also add them.
+//TODO: maybe have gradle inspect jar, retrieve classes, update mods.txt THEN convert to smali and bundle inside APK.
+//TODO: that should greatly simplify multi-mod bundling, skipping the compilation entirely for pre-compiled mods.
+task findModSources {
+    def directory = file('src/com/saterskog/mods')
+    def outputFile = file('saterskog/mods.txt')
+
+    doLast {
+        outputFile.parentFile.mkdirs()
+        outputFile.createNewFile()
+
+        outputFile.text = ""
+
+        directory.eachFileRecurse { file ->
+            if (file.name.endsWith('.java')) {
+                String fullyQualifiedName = file.path.replace(directory.path + File.separator, '')
+                        .replace(File.separator, '.').replace('.java', '')
+
+                outputFile.append('com.saterskog.mods.'+fullyQualifiedName + '\n')
+            }
+        }
+    }
+}
+
 
 task cleanAPK(type: Delete) {
     description 'Deletes the apk decompilation directories'
