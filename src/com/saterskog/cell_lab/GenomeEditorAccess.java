@@ -17,7 +17,6 @@ public class GenomeEditorAccess {
             this.GenomeEditorViewClass = Class.forName("com.saterskog.cell_lab.i");
             this.CellTypesClass = Class.forName("com.saterskog.cell_lab.h");
         } catch (ClassNotFoundException e) {
-            System.err.println("Could not find subclasses");
             throw new RuntimeException(e);
         }
     }
