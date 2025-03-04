@@ -1,2 +1,6 @@
 *.apk
+*.keystore
+pass.txt
+*.smali
+build/**/*
 saterskog/apk/**/*

@@ -88,12 +88,6 @@ task APK(type: Exec){
     commandLine 'apktool','b','saterskog/apk','-o','build/apk/mod.apk'
 }
 
-// Task to clean the build directory
-task cleanBuild(type: Delete) {
-    description 'Deletes the build directory'
-    delete 'build'
-}
-
 // This will find source files (.java) for mods in com/saterskog/mods and add them to mods.txt
 // Do note that only classes annotated @ChimeraMod will be loaded as mods.
 // There is a hacky workaround maybe using static blocks but that's some nerd shit
@@ -121,6 +115,68 @@ task findModSources {
     }
 }
 
+//This task should insert the mods.txt file inside apk/assets/ where it is expected to be.
+task insertModManifest(type: Copy) {
+    from 'saterskog/mods.txt'
+    into 'saterskog/apk/assets'
+    doLast {
+        if (!file('saterskog/mods.txt').exists()) {
+            throw new GradleException("Could not fetch mod manifest file!")
+        }
+        if (!file('saterskog/apk/assets').exists()) {
+            throw new GradleException("Assets folder does not exist. Make sure to decompile the apk correctly!")
+        }
+        println "Mod manifest successfully copied into assets folder"
+    }
+}
+
+task insertModFiles(type: Copy) {
+    from 'build/smali/com/saterskog/mods'
+    into 'saterskog/apk/smali/com/saterskog/mods'
+
+    doFirst {
+        def sourceDir = file('build/smali/com/saterskog/mods')
+        if (!sourceDir.exists()) {
+            throw new GradleException("Could not fetch mod smali files!")
+        }
+    }
+
+    doLast {
+        def destinationDir = file('saterskog/apk/smali/com/saterskog/mods')
+        if (!destinationDir.exists()) {
+            destinationDir.mkdirs()
+            println "Created mods directory"
+        }
+        println "Mod files successfully bundled in APK"
+    }
+}
+
+task insertChimeraHooks(type: Copy) {
+    from 'build/smali/com/saterskog/cell_lab'
+    into 'saterskog/apk/smali/com/saterskog/cell_lab'
+
+    doFirst {
+        def sourceDir = file('build/smali/com/saterskog/cell_lab')
+        if (!sourceDir.exists()) {
+            throw new GradleException("Could not fetch Chimera smali files!")
+        }
+    }
+
+    doLast {
+        def destinationDir = file('saterskog/apk/smali/com/saterskog/cell_lab')
+        if (!destinationDir.exists()) {
+            destinationDir.mkdirs()
+            println "Inserted Chimera core files"
+        }
+        println "Chimera core files successfully bundled in APK"
+    }
+}
+
+// Task to clean the build directory
+task cleanBuild(type: Delete) {
+    description 'Deletes the build directory'
+    delete 'build'
+}
 
 task cleanAPK(type: Delete) {
     description 'Deletes the apk decompilation directories'
