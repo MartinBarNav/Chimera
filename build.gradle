@@ -10,7 +10,7 @@ task buildChimera(type: Exec) {
     commandLine 'javac', '-d', 'build/chimera', *javaFiles
 }
 
-// Task to compile all Java files (temporary pre-compilation for Chimera)
+
 task buildAll(type: Exec) {
     description 'Compiles all Java files into build/chimera directory'
 
@@ -23,7 +23,8 @@ task buildAll(type: Exec) {
     commandLine 'javac', '-d', 'build/chimera', *javaFiles
 }
 
-
+// Temporary!
+//TODO: CHANGE THIS!
 task buildMod {
     description 'Builds the mod by depending on buildAll'
     dependsOn buildAll
@@ -75,8 +76,8 @@ task getSmali(type: Exec) {
 //This is really hard-codey, I just want to go to sleep rn, i'll fix it later.
 task deAPK(type: Exec){
     workingDir file('saterskog')
-
-    commandLine 'apktool','d','Project Enzyme.apk','-o','./apk'
+    mkdir("saterskog/apk")
+    commandLine 'apktool','d','Project Enzyme.apk','-o','./apk','-f'
 }
 
 //This should never be called alone, APK will have runtime errors if ChimeraHooks.smali isn't included inside
@@ -173,7 +174,7 @@ task insertChimeraHooks(type: Copy) {
 }
 
 task modAPK{
-    dependsOn deAPK,patchAPK,getSmali,findModSources,inserModManifest,insertChimeraHooks,insertModFiles
+    dependsOn deAPK,patchAPK,getSmali,findModSources,insertModManifest,insertChimeraHooks,insertModFiles,APK
 }
 
 // Task to clean the build directory

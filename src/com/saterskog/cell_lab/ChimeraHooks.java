@@ -6,10 +6,11 @@ import java.util.List;
 
 public class ChimeraHooks {
     private static List<Object> mods = new ArrayList<>();
-
     private static Object genomeEditorView;
+    private static boolean initialized=false;
 
     public static void initMods(String[] classNames) {
+        if(initialized) return;
         for (String className : classNames) {
             try {
                 Class<?> clazz = Class.forName(className);
@@ -21,6 +22,7 @@ public class ChimeraHooks {
                 e.printStackTrace();
             }
         }
+        initialized=true;
     }
 
     public static void onCreateGeditorHook(Object geditorView, ArrayList<Object> controllers){
@@ -43,8 +45,8 @@ public class ChimeraHooks {
                     //Try static implementation
                     method.invoke(access);
                 } catch (IllegalAccessException e) {
-                    System.err.println("Method: " + method.getName() + " on mod: " + mod.getClass().getName()
-                            + " is inaccessible. Mod hooks must be public methods!");
+                    System.err.println("Warning: Method: " + method.getName() + " on mod: " + mod.getClass().getName()
+                            + "has valid name for hook but is inaccessible. Mod hooks must be public methods!");
                 }
             } catch (NoSuchMethodException e) {
                 //No implementation, ignore, keep searching.
