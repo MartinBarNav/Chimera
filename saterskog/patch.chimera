@@ -46,7 +46,7 @@
    }
 }
 
-{com/saterskog/cell_lab/i.smali: {line: 6103, override:false, patches:{
+{com/saterskog/cell_lab/i.smali: {line: 6202, override:false, patches:{
             '; do not use p0, it will give register index out of bounds error. p0 (this) is moved to v0 prior to this patch',
             'invoke-static {v0,v8}, Lcom/saterskog/cell_lab/ChimeraHooks;->onCreateGeditorHook(Ljava/lang/Object;Ljava/util/ArrayList;)V'
         }
