@@ -172,6 +172,10 @@ task insertChimeraHooks(type: Copy) {
     }
 }
 
+task modAPK{
+    dependsOn deAPK,patchAPK,getSmali,findModSources,inserModManifest,insertChimeraHooks,insertModFiles
+}
+
 // Task to clean the build directory
 task cleanBuild(type: Delete) {
     description 'Deletes the build directory'
