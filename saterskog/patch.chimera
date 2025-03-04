@@ -52,3 +52,8 @@
         }
     }
 }
+
+{com/saterskog/cell_lab/Gene.smali: {line: 531, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 602, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 1029, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 1358, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}

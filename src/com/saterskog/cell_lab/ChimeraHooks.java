@@ -1,5 +1,8 @@
 package com.saterskog.cell_lab;
 
+import com.saterskog.cell_lab.accessors.GeneAccess;
+import com.saterskog.cell_lab.accessors.GenomeEditorAccess;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +12,7 @@ public class ChimeraHooks {
     private static Object genomeEditorView;
     private static boolean initialized=false;
 
-    public static void initMods(String[] classNames) {
+    protected static void initMods(String[] classNames) {
         if(initialized) return;
         for (String className : classNames) {
             try {
@@ -25,7 +28,16 @@ public class ChimeraHooks {
         initialized=true;
     }
 
-    public static void onCreateGeditorHook(Object geditorView, ArrayList<Object> controllers){
+    // In case a mod misbehaves or something, I'll just leave this here if it's ever needed.
+    public static void unloadMod(Object mod){
+        mods.remove(mod);
+    }
+
+    /*protected static void onGeneInstanceHook(Object gene){
+        GeneAccess access = new GeneAccess(gene);
+    }*/
+
+    protected static void onCreateGeditorHook(Object geditorView, ArrayList<Object> controllers){
         genomeEditorView = geditorView;
         GenomeEditorAccess access = new GenomeEditorAccess(genomeEditorView, controllers);
 
@@ -77,7 +89,7 @@ public class ChimeraHooks {
      * @param challenge an integer ID mapped to a given challenge in the challenge screen
      * @return false for vanilla behavior, true to unlock given challenge
      */
-    public static boolean unlockChallengeHook(int challenge){
+    protected static boolean unlockChallengeHook(int challenge){
         //In this case, the first mod to be loaded and invoked wins the implementation race.
         //So... uhh... at least it doesn't crash if two mods implement the same hook.
         Method method = getFirstModImplementation("unlockChallengeHook",int.class);
@@ -115,5 +127,16 @@ public class ChimeraHooks {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    // This traces the stack to make sure a given method at frameDepth+1 is either a static block <clinit> or constructor <init>
+    // .skip(frameDepth) skips the specified stack frames. Should generally be 1 but in cases of more complex stack traces it could be larger.
+    // .limit(1) should limit our search to the immediate caller after the skips.
+    // frameDepth+1 is therefore the location (in frames traced) where the method we are checking has it's frame.
+    // For more info on stack frames, read: https://www.geeksforgeeks.org/stack-frame-in-computer-organization/
+    public static boolean isCallerInitializer(int frameDepth) {
+        return StackWalker.getInstance().walk(frames ->
+                frames.skip(frameDepth).limit(1)
+                        .anyMatch(f -> f.getMethodName().equals("<clinit>") || f.getMethodName().equals("<init>")));
     }
 }

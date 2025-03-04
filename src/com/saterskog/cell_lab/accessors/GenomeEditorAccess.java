@@ -1,4 +1,4 @@
-package com.saterskog.cell_lab;
+package com.saterskog.cell_lab.accessors;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -21,10 +21,10 @@ public class GenomeEditorAccess {
         }
     }
 
-    public void createSlider(String name, String description){
+    public void createSlider(String name, String description, int propertyIndex){
         try {
             Constructor<?> cons = ExtraSeekBarClass.getConstructor(GenomeEditorViewClass,String.class,String.class,int.class,CellTypesClass);
-            Object extraSeekBar = cons.newInstance(genomeEditorObject, name, description,1,null);
+            Object extraSeekBar = cons.newInstance(genomeEditorObject, name, description,propertyIndex,null);
             controllers.add(extraSeekBar);
         } catch (Exception e) {
             throw new RuntimeException(e);
