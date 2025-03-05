@@ -3,28 +3,37 @@ package com.saterskog.cell_lab;
 import com.saterskog.cell_lab.accessors.GeneAccess;
 import com.saterskog.cell_lab.accessors.GenomeEditorAccess;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ChimeraHooks {
-    private static List<Object> mods = new ArrayList<>();
-    private static Object genomeEditorView;
+    private static final List<Object> mods = new ArrayList<>();
     private static boolean initialized=false;
+    public static final int DEFAULT_FPROPERTY_COUNT=8; //For vanilla cell lab this is 7 but i'm using PjEnzyme apk as a base.
+    public static final int DEFAULT_IPROPERTY_COUNT=13; //For vanilla cell lab this is 11
 
     protected static void initMods(String[] classNames) {
         if(initialized) return;
+        GeneAccess.init();
+        GenomeEditorAccess.init();
+
         for (String className : classNames) {
             try {
                 Class<?> clazz = Class.forName(className);
                 if (clazz.isAnnotationPresent(ChimeraMod.class)) {
-                    Object mod = clazz.getDeclaredConstructor().newInstance();
+                    Constructor<?> cons = clazz.getDeclaredConstructor();
+                    cons.setAccessible(true);
+                    Object mod = cons.newInstance();
                     mods.add(mod);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                System.err.println(e.getCause());
             }
         }
+
+        GeneAccess.loadStatic();
         initialized=true;
     }
 
@@ -38,8 +47,7 @@ public class ChimeraHooks {
     }*/
 
     protected static void onCreateGeditorHook(Object geditorView, ArrayList<Object> controllers){
-        genomeEditorView = geditorView;
-        GenomeEditorAccess access = new GenomeEditorAccess(genomeEditorView, controllers);
+        GenomeEditorAccess access = new GenomeEditorAccess(geditorView, controllers);
 
         invokeModImplementationWithAccess("onCreateGenomeEditorViewHook",access);
     }
@@ -129,14 +137,15 @@ public class ChimeraHooks {
         }
     }
 
-    // This traces the stack to make sure a given method at frameDepth+1 is either a static block <clinit> or constructor <init>
-    // .skip(frameDepth) skips the specified stack frames. Should generally be 1 but in cases of more complex stack traces it could be larger.
-    // .limit(1) should limit our search to the immediate caller after the skips.
-    // frameDepth+1 is therefore the location (in frames traced) where the method we are checking has it's frame.
+    //This method traces the stack to make sure that the caller at [frameDepth] (skipping this method's frame) is a constructor or static block
     // For more info on stack frames, read: https://www.geeksforgeeks.org/stack-frame-in-computer-organization/
     public static boolean isCallerInitializer(int frameDepth) {
-        return StackWalker.getInstance().walk(frames ->
-                frames.skip(frameDepth).limit(1)
-                        .anyMatch(f -> f.getMethodName().equals("<clinit>") || f.getMethodName().equals("<init>")));
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace(); //array of stack frames
+
+        int targetIndex = frameDepth + 3;
+
+        StackTraceElement frame = stackTrace[targetIndex];
+        String methodName = frame.getMethodName();
+        return "<clinit>".equals(methodName) || "<init>".equals(methodName);
     }
 }

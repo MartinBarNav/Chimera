@@ -1,11 +1,21 @@
 package com.saterskog.mods;
 
+import com.saterskog.cell_lab.ChimeraHooks;
 import com.saterskog.cell_lab.ChimeraMod;
+import com.saterskog.cell_lab.accessors.GeneAccess;
+import com.saterskog.cell_lab.accessors.GeneProperty;
 import com.saterskog.cell_lab.accessors.GenomeEditorAccess;
+import com.saterskog.cell_lab.apiutils.RequestDeniedException;
 
 @ChimeraMod
 public class ExampleMod {
+    private static GeneProperty<Float>[] myProperties;
+
+    public ExampleMod(){
+        myProperties = GeneAccess.requestAdditionalGeneFloatProperties(this, 1);
+    }
+
     public static void onCreateGenomeEditorViewHook(GenomeEditorAccess access){
-        access.createSlider("Test","Test description",0);
+        access.createSlider("Test","Test description",myProperties[0].getIndex());
     }
 }

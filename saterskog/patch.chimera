@@ -47,13 +47,15 @@
 }
 
 {com/saterskog/cell_lab/i.smali: {line: 6202, override:false, patches:{
-            '; do not use p0, it will give register index out of bounds error. p0 (this) is moved to v0 prior to this patch',
             'invoke-static {v0,v8}, Lcom/saterskog/cell_lab/ChimeraHooks;->onCreateGeditorHook(Ljava/lang/Object;Ljava/util/ArrayList;)V'
         }
     }
 }
 
+{com/saterskog/cell_lab/Gene.smali: {line: 125, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 132, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 531, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 569, override:true, patches:{'sget v5, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 602, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 1029, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
-{com/saterskog/cell_lab/Gene.smali: {line: 1358, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 1358, override:true, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
