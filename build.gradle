@@ -92,7 +92,7 @@ task getSmali(type: Exec) {
 task deAPK(type: Exec){
     workingDir file('saterskog')
     mkdir("saterskog/apk")
-    commandLine 'apktool','d','Project Enzyme.apk','-o','./apk','-f'
+    commandLine 'apktool','d','cell.apk','-o','./apk','-f'
 }
 
 //This should never be called alone, APK will have runtime errors if ChimeraHooks.smali isn't included inside
