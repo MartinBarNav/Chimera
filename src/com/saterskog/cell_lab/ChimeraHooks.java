@@ -11,8 +11,8 @@ import java.util.List;
 public class ChimeraHooks {
     private static final List<Object> mods = new ArrayList<>();
     private static boolean initialized=false;
-    public static final int DEFAULT_FPROPERTY_COUNT=8; //For vanilla cell lab this is 7 but i'm using PjEnzyme apk as a base.
-    public static final int DEFAULT_IPROPERTY_COUNT=13; //For vanilla cell lab this is 11
+    public static final int DEFAULT_FPROPERTY_COUNT=7; //vanilla value
+    public static final int DEFAULT_IPROPERTY_COUNT=11; //vanilla value
 
     protected static void initMods(String[] classNames) {
         if(initialized) return;
