@@ -42,15 +42,34 @@ public class GeneAccess extends Accessor{
 
             if(modFloatProperties != null) {
                 int j = 0;
-                for (int i = fPropertiesCount; i > fPropertiesCount + modFloatProperties.size(); i--) {
-                    ((float[]) floatPropertiesMaxField.get(null))[i - 1] = modFloatProperties.get(j).getMaximumValue();
-                    ((float[]) floatPropertiesMinField.get(null))[i - 1] = modFloatProperties.get(j).getMinimumValue();
+                for (int i = ChimeraHooks.DEFAULT_FPROPERTY_COUNT; i < fPropertiesCount; i++) {
+                    ((float[]) floatPropertiesMaxField.get(null))[i] = modFloatProperties.get(j).getMaximumValue();
+                    ((float[]) floatPropertiesMinField.get(null))[i] = modFloatProperties.get(j).getMinimumValue();
                     j++;
                 }
             }
 
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static <T> void setMinimumValueOfProperty(GeneProperty<T> property, T value){
+        if(ChimeraHooks.isCallerInitializer(1)) {
+            property.setMinimumValue(value);
+            if(value instanceof Float){
+                modFloatProperties.get(property.getIndex()-ChimeraHooks.DEFAULT_FPROPERTY_COUNT).setMinimumValue((float) value);
+            }
+        }
+
+    }
+
+    public static <T> void setMaximumValueOfProperty(GeneProperty<T> property, T value){
+        if(ChimeraHooks.isCallerInitializer(1)) {
+            property.setMaximumValue(value);
+            if(value instanceof Float){
+                modFloatProperties.get(property.getIndex()-ChimeraHooks.DEFAULT_FPROPERTY_COUNT).setMaximumValue((float) value);
+            }
         }
     }
 
@@ -76,4 +95,6 @@ public class GeneAccess extends Accessor{
 
         return fp;
     }
+
+
 }

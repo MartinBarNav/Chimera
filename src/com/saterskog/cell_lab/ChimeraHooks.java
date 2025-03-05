@@ -142,6 +142,8 @@ public class ChimeraHooks {
     public static boolean isCallerInitializer(int frameDepth) {
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace(); //array of stack frames
 
+        //stack snapshot apparently taken at getStackTrace()
+        //I tried with +2 but it doesn't work. I still have no idea why there's an extra frame, but whatever, it works.
         int targetIndex = frameDepth + 3;
 
         StackTraceElement frame = stackTrace[targetIndex];

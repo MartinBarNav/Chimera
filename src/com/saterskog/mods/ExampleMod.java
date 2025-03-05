@@ -13,6 +13,7 @@ public class ExampleMod {
 
     public ExampleMod(){
         myProperties = GeneAccess.requestAdditionalGeneFloatProperties(this, 1);
+        GeneAccess.setMaximumValueOfProperty(myProperties[0], 77.0f);
     }
 
     public static void onCreateGenomeEditorViewHook(GenomeEditorAccess access){

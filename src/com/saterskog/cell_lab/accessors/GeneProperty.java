@@ -9,11 +9,11 @@ public class GeneProperty<T> {
         this.index = index;
     }
 
-    public void setMinimumValue(T minimumValue) {
+    protected void setMinimumValue(T minimumValue) {
         this.minimumValue = minimumValue;
     }
 
-    public void setMaximumValue(T maximumValue){
+    protected void setMaximumValue(T maximumValue){
         this.maximumValue = maximumValue;
     }
 
