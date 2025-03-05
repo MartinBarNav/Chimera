@@ -1,33 +1,53 @@
 package com.saterskog.cell_lab;
 
+import com.saterskog.cell_lab.accessors.GeneAccess;
+import com.saterskog.cell_lab.accessors.GenomeEditorAccess;
+
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ChimeraHooks {
-    private static List<Object> mods = new ArrayList<>();
-    private static Object genomeEditorView;
+    private static final List<Object> mods = new ArrayList<>();
     private static boolean initialized=false;
+    public static final int DEFAULT_FPROPERTY_COUNT=8; //For vanilla cell lab this is 7 but i'm using PjEnzyme apk as a base.
+    public static final int DEFAULT_IPROPERTY_COUNT=13; //For vanilla cell lab this is 11
 
-    public static void initMods(String[] classNames) {
+    protected static void initMods(String[] classNames) {
         if(initialized) return;
+        GeneAccess.init();
+        GenomeEditorAccess.init();
+
         for (String className : classNames) {
             try {
                 Class<?> clazz = Class.forName(className);
                 if (clazz.isAnnotationPresent(ChimeraMod.class)) {
-                    Object mod = clazz.getDeclaredConstructor().newInstance();
+                    Constructor<?> cons = clazz.getDeclaredConstructor();
+                    cons.setAccessible(true);
+                    Object mod = cons.newInstance();
                     mods.add(mod);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                System.err.println(e.getCause());
             }
         }
+
+        GeneAccess.loadStatic();
         initialized=true;
     }
 
-    public static void onCreateGeditorHook(Object geditorView, ArrayList<Object> controllers){
-        genomeEditorView = geditorView;
-        GenomeEditorAccess access = new GenomeEditorAccess(genomeEditorView, controllers);
+    // In case a mod misbehaves or something, I'll just leave this here if it's ever needed.
+    public static void unloadMod(Object mod){
+        mods.remove(mod);
+    }
+
+    /*protected static void onGeneInstanceHook(Object gene){
+        GeneAccess access = new GeneAccess(gene);
+    }*/
+
+    protected static void onCreateGeditorHook(Object geditorView, ArrayList<Object> controllers){
+        GenomeEditorAccess access = new GenomeEditorAccess(geditorView, controllers);
 
         invokeModImplementationWithAccess("onCreateGenomeEditorViewHook",access);
     }
@@ -77,7 +97,7 @@ public class ChimeraHooks {
      * @param challenge an integer ID mapped to a given challenge in the challenge screen
      * @return false for vanilla behavior, true to unlock given challenge
      */
-    public static boolean unlockChallengeHook(int challenge){
+    protected static boolean unlockChallengeHook(int challenge){
         //In this case, the first mod to be loaded and invoked wins the implementation race.
         //So... uhh... at least it doesn't crash if two mods implement the same hook.
         Method method = getFirstModImplementation("unlockChallengeHook",int.class);
@@ -115,5 +135,19 @@ public class ChimeraHooks {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    //This method traces the stack to make sure that the caller at [frameDepth] (skipping this method's frame) is a constructor or static block
+    // For more info on stack frames, read: https://www.geeksforgeeks.org/stack-frame-in-computer-organization/
+    public static boolean isCallerInitializer(int frameDepth) {
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace(); //array of stack frames
+
+        //stack snapshot apparently taken at getStackTrace()
+        //I tried with +2 but it doesn't work. I still have no idea why there's an extra frame, but whatever, it works.
+        int targetIndex = frameDepth + 3;
+
+        StackTraceElement frame = stackTrace[targetIndex];
+        String methodName = frame.getMethodName();
+        return "<clinit>".equals(methodName) || "<init>".equals(methodName);
     }
 }

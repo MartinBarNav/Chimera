@@ -1,3 +1,18 @@
+/*
+* For the moment, running gradle modAPK followed by gradle APK should yield a modded APK that can be signed then installed.
+* There is no automatic signing yet, I sign the APK with my own keystore. Some emulators can run unsigned APKs,
+* so if you're running the APK on an emulator (as you should) you can forego the signing for the moment.
+* Not a top priority until alpha release maybe?
+*
+*/
+
+/*
+* modAPK compiles both chimera and mod java files, decompiles the apk inside saterskog/cell.apk, patches it using patcher.jar in /tools/patcher.jar
+* and the patch file in saterskog/patch.chimera, then it uses d8 to convert .class mod and chimera files to classes.dex and finally baksmali to
+* obtain smali files which it then inserts into the APK at the correct locations. Not to mention the mods.txt manifest inside the /assets/ folder of the APK.
+* There certainly is a more straightfoward way to convert java to smali and I will switch to that later on, but for testing purposes baksmali works well.
+*/
+
 // Task to compile Chimera-specific Java files
 task buildChimera(type: Exec) {
     description 'Compiles Chimera Java files into build/chimera directory'
@@ -77,7 +92,7 @@ task getSmali(type: Exec) {
 task deAPK(type: Exec){
     workingDir file('saterskog')
     mkdir("saterskog/apk")
-    commandLine 'apktool','d','Project Enzyme.apk','-o','./apk','-f'
+    commandLine 'apktool','d','cell.apk','-o','./apk','-f'
 }
 
 //This should never be called alone, APK will have runtime errors if ChimeraHooks.smali isn't included inside
@@ -174,7 +189,7 @@ task insertChimeraHooks(type: Copy) {
 }
 
 task modAPK{
-    dependsOn deAPK,patchAPK,getSmali,findModSources,insertModManifest,insertChimeraHooks,insertModFiles,APK
+    dependsOn deAPK,patchAPK,getSmali,findModSources,insertModManifest,insertChimeraHooks,insertModFiles
 }
 
 // Task to clean the build directory
