@@ -3,7 +3,7 @@ package com.saterskog.cell_lab.accessors;
 import java.io.ObjectInputStream;
 
 //Wrapper
-public class GeneProperty<T> {
+public class GeneProperty<T extends Number> {
     private int index;
     private T minimumValue, maximumValue;
     private Object ownerMod;

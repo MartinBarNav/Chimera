@@ -22,18 +22,18 @@ public class ExampleMod {
     }
 
     public static void onSaveGeneToStream(GeneAccess geneAccess) {
-        //geneAccess.savePropertiesToStream(myProperties, float.class);
+        geneAccess.savePropertiesToStream(myProperties, float.class);
     }
 
     public void onLoadGeneFromStream(GeneAccess geneAccess){
-        //geneAccess.loadPropertiesFromStream(myProperties, float.class);
+        geneAccess.loadPropertiesFromStream(myProperties, float.class);
     }
 
     public void onSaveGeneToParcel(GeneAccess geneAccess){
-        //geneAccess.savePropertiesToParcel(myProperties, float.class);
+        geneAccess.savePropertiesToParcel(myProperties, float.class);
     }
 
     public void onLoadGeneFromParcel(GeneAccess geneAccess){
-        //geneAccess.loadPropertiesFromParcel(myProperties, float.class);
+        geneAccess.loadPropertiesFromParcel(myProperties, float.class);
     }
 }

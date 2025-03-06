@@ -85,7 +85,7 @@ public class GeneAccess extends Accessor{
         }
     }
 
-    public static <T> void setMinimumValueOfProperty(GeneProperty<T> property, T value){
+    public static <T extends Number> void setMinimumValueOfProperty(GeneProperty<T> property, T value){
         if(ChimeraHooks.isCallerInitializer(1)) {
             property.setMinimumValue(value);
             if(value instanceof Float){
@@ -95,11 +95,14 @@ public class GeneAccess extends Accessor{
 
     }
 
-    public static <T> void setMaximumValueOfProperty(GeneProperty<T> property, T value){
+    public static <T extends Number> void setMaximumValueOfProperty(GeneProperty<T> property, T value){
         if(ChimeraHooks.isCallerInitializer(1)) {
             property.setMaximumValue(value);
             if(value instanceof Float){
                 modFloatProperties.get(property.getIndex()-ChimeraHooks.DEFAULT_FPROPERTY_COUNT).setMaximumValue((float) value);
+            }
+            else if(value instanceof  Integer){
+                modIntProperties.get(property.getIndex()-ChimeraHooks.DEFAULT_IPROPERTY_COUNT).setMaximumValue((int) value);
             }
         }
     }
@@ -118,21 +121,21 @@ public class GeneAccess extends Accessor{
         GeneProperty<T>[] properties = new GeneProperty[amount];
 
         for (int i = 0; i < amount; i++) {
-            if (type == Float.class) {
-                properties[i] = new GeneProperty<T>(fPropertiesCount + i);
-                properties[i].setMaximumValue((T) Float.valueOf(1.0f));
-                properties[i].setMinimumValue((T) Float.valueOf(0.0f));
+            if (type == float.class) {
+                properties[i] = new GeneProperty<>(fPropertiesCount + i);
+                properties[i].setMaximumValue((T) Float.valueOf(1.f));
+                properties[i].setMinimumValue((T) Float.valueOf(0.f));
                 modFloatProperties.add((GeneProperty<Float>) properties[i]);
-            } else if (type == Integer.class) {
-                properties[i] = new GeneProperty<T>(intPropertiesCount + i);
+            } else if (type == int.class) {
+                properties[i] = new GeneProperty<>(intPropertiesCount + i);
                 properties[i].setMaximumValue((T) Integer.valueOf(1));
                 modIntProperties.add((GeneProperty<Integer>) properties[i]);
             }
         }
 
-        if (type == Float.class) {
+        if (type == float.class) {
             fPropertiesCount += amount;
-        } else if (type == Integer.class) {
+        } else if (type == int.class) {
             intPropertiesCount += amount;
         }
 
