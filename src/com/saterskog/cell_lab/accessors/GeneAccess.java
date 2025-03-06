@@ -1,8 +1,9 @@
 package com.saterskog.cell_lab.accessors;
 
 import com.saterskog.cell_lab.ChimeraHooks;
-import com.saterskog.cell_lab.apiutils.RequestDeniedException;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
@@ -11,13 +12,29 @@ public class GeneAccess extends Accessor{
     public static int fPropertiesCount=ChimeraHooks.DEFAULT_FPROPERTY_COUNT; //This controls the size of the float properties array. 8 by default, mods can add more.
     private static Field floatPropertiesMaxField,floatPropertiesMinField;
     private static ArrayList<GeneProperty<Float>> modFloatProperties;
+    private Field floatPropertiesField,rgbColorField;
+
+    public GeneAccess(Object gene, AndroidAccess parcel) throws RuntimeException {
+        this(gene);
+        setParcel(parcel);
+    }
+
+    public GeneAccess(Object gene, ObjectInputStream stream) {
+        this(gene);
+        setInStream(stream);
+    }
+
+    public GeneAccess(Object gene, ObjectOutputStream stream) {
+        this(gene);
+        setOutStream(stream);
+    }
 
     public GeneAccess(Object gene){
         super(gene);
 
         try{
-            Field rgbColorField = Class.forName("com.saterskog.cell_lab.Gene").getField("a");
-            Field floatPropertiesField = Class.forName("com.saterskog.cell_lab.Gene").getField("v");
+            this.rgbColorField = Class.forName("com.saterskog.cell_lab.Gene").getField("a");
+            this.floatPropertiesField = Class.forName("com.saterskog.cell_lab.Gene").getField("v");
 
             this.rgbColor = (float[]) rgbColorField.get(this.getObjectReference());
             this.floatProperties = (float[]) floatPropertiesField.get(this.getObjectReference());
@@ -25,6 +42,7 @@ public class GeneAccess extends Accessor{
             throw new RuntimeException();
         }
     }
+
 
     public static void init(){
         modFloatProperties = new ArrayList<GeneProperty<Float>>();
@@ -96,5 +114,54 @@ public class GeneAccess extends Accessor{
         return fp;
     }
 
+    //TODO: make safety checks. This code is currently very unsafe.
+
+    public void savePropertiesToParcel(GeneProperty<Float>[] properties){
+        if(this.getParcel() == null){
+            System.err.println("Gene access does not contain a parcel reference! Was savePropertiesToParcel() called outside" +
+                    " the scope of a valid hook?");
+            return;
+        }
+        for(GeneProperty<Float> property : properties) {
+            ChimeraHooks.invokeMethod(this.getParcel().getObjectReference(), "writeFloat", new Class[]{float.class},
+                    this.floatProperties[property.getIndex()]);
+        }
+    }
+
+    public void loadPropertiesFromParcel(GeneProperty<Float>[] properties){
+        if(this.getParcel() == null){
+            System.err.println("Gene access does not contain a parcel reference! Was loadPropertiesFromParcel() called outside" +
+                    " the scope of a valid hook?");
+            return;
+        }
+        for(GeneProperty<Float> property : properties) {
+            this.floatProperties[property.getIndex()] = (float) ChimeraHooks.invokeMethodNoParams(this.getParcel().getObjectReference(), "readFloat");
+        }
+    }
+
+    public void savePropertiesToStream(GeneProperty<Float>[] properties){
+        if(this.getOutStream() == null){
+            System.err.println("Gene access does not contain a stream reference! Was savePropertiesToStream() called outside" +
+                    " the scope of a valid hook?");
+            return;
+        }
+
+        for(GeneProperty<Float> property : properties){
+            ChimeraHooks.invokeMethod(this.getOutStream(),"writeFloat", new Class[]{float.class},
+                    this.floatProperties[property.getIndex()]);
+        }
+    }
+
+    public void loadPropertiesFromStream(GeneProperty<Float>[] properties){
+        if(this.getInStream() == null){
+            System.err.println("Gene access does not contain a stream reference! Was loadPropertiesFromStream() called outside" +
+                    " the scope of a valid hook?");
+            return;
+        }
+
+        for(GeneProperty<Float> property : properties){
+            this.floatProperties[property.getIndex()] = (float) ChimeraHooks.invokeMethodNoParams(this.getInStream(),"readFloat");
+        }
+    }
 
 }

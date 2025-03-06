@@ -1,5 +1,7 @@
 package com.saterskog.cell_lab.accessors;
 
+import java.io.ObjectInputStream;
+
 //Wrapper
 public class GeneProperty<T> {
     private int index;
@@ -27,5 +29,9 @@ public class GeneProperty<T> {
 
     public int getIndex(){
         return this.index;
+    }
+
+    public void readFromStream(ObjectInputStream stream){
+
     }
 }
