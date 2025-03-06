@@ -13,7 +13,7 @@ public class ExampleMod {
     private static GeneProperty<Float>[] myProperties;
 
     public ExampleMod(){
-        myProperties = GeneAccess.requestAdditionalGeneFloatProperties(this, 1);
+        myProperties = GeneAccess.requestAdditionalGeneProperties(1, float.class);
         GeneAccess.setMaximumValueOfProperty(myProperties[0], 77.0f);
     }
 
@@ -22,20 +22,18 @@ public class ExampleMod {
     }
 
     public static void onSaveGeneToStream(GeneAccess geneAccess) {
-        System.out.println("stream save mod imp");
-        geneAccess.savePropertiesToStream(myProperties);
+        //geneAccess.savePropertiesToStream(myProperties, float.class);
     }
 
     public void onLoadGeneFromStream(GeneAccess geneAccess){
-        System.out.println("stream load mod imp");
-        geneAccess.loadPropertiesFromStream(myProperties);
+        //geneAccess.loadPropertiesFromStream(myProperties, float.class);
     }
 
     public void onSaveGeneToParcel(GeneAccess geneAccess){
-        geneAccess.savePropertiesToParcel(myProperties);
+        //geneAccess.savePropertiesToParcel(myProperties, float.class);
     }
 
     public void onLoadGeneFromParcel(GeneAccess geneAccess){
-        geneAccess.loadPropertiesFromParcel(myProperties);
+        //geneAccess.loadPropertiesFromParcel(myProperties, float.class);
     }
 }

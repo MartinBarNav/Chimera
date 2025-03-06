@@ -6,9 +6,18 @@ import java.io.ObjectInputStream;
 public class GeneProperty<T> {
     private int index;
     private T minimumValue, maximumValue;
+    private Object ownerMod;
 
     protected GeneProperty(int index){
         this.index = index;
+    }
+
+    protected void setMod(Object mod){
+        this.ownerMod = mod;
+    }
+
+    protected Object getMod(){
+        return this.ownerMod;
     }
 
     protected void setMinimumValue(T minimumValue) {
