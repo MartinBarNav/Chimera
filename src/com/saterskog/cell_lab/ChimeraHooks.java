@@ -5,7 +5,6 @@ import com.saterskog.cell_lab.accessors.AndroidAccess;
 import com.saterskog.cell_lab.accessors.GeneAccess;
 import com.saterskog.cell_lab.accessors.GenomeEditorAccess;
 
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Constructor;
@@ -16,8 +15,8 @@ import java.util.List;
 public class ChimeraHooks {
     private static final List<Object> mods = new ArrayList<>();
     private static boolean initialized=false;
-    public static final int DEFAULT_FPROPERTY_COUNT=7; //vanilla value
-    public static final int DEFAULT_IPROPERTY_COUNT=11; //vanilla value
+    public static final int VANILLA_FPROPERTY_COUNT=7,VANILLA_IPROPERTY_COUNT=11,VANILLA_MODES_COUNT=40; //vanilla value
+    public static final int VANILLA_VERSION = 95;
 
     protected static void initMods(String[] classNames) {
         if(initialized) return;

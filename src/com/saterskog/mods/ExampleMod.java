@@ -13,7 +13,7 @@ public class ExampleMod {
     private static GeneProperty<Float>[] myProperties;
 
     public ExampleMod(){
-        myProperties = GeneAccess.requestAdditionalGeneProperties(1, float.class);
+        myProperties = GeneAccess.requestAdditionalGeneProperties(1, float.class, this);
         GeneAccess.setMaximumValueOfProperty(myProperties[0], 77.0f);
     }
 
