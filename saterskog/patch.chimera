@@ -58,6 +58,8 @@
 {com/saterskog/cell_lab/Gene.smali: {line: 545, override:true, patches:{'sget v5, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 939, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 1264, override:true, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 1572, override:true, patches:{'sget v9, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 1582, override:true, patches:{'sget v9, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
 
 {com/saterskog/cell_lab/Gene.smali: {line: 909, override:false, patches:{'invoke-static {p0, p1}, Lcom/saterskog/cell_lab/ChimeraHooks;->loadGeneFromParcel(Ljava/lang/Object;Ljava/lang/Object;)V'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 3434, override:false, patches:{'invoke-static {p0, p1}, Lcom/saterskog/cell_lab/ChimeraHooks;->saveGeneToParcel(Ljava/lang/Object;Ljava/lang/Object;)V'}}}
@@ -87,15 +89,10 @@
 {com/saterskog/cell_lab/i.smali: {line: 1803, override:true, patches:{'sget v1, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
 {com/saterskog/cell_lab/i.smali: {line: 2566, override:true, patches:{'sget v9, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
 {com/saterskog/cell_lab/i.smali: {line: 3684, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
-{com/saterskog/cell_lab/i.smali: {line: 3687, override:false, patches:{
-            'sget v0, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I',
-            'if-eq v2, v0, :cond_chimera1'
-        }
-    }
-}
+{com/saterskog/cell_lab/i.smali: {line: 3687, override:false, patches:{'if-eq v2, v0, :cond_chimera1'}}}
 {com/saterskog/cell_lab/i.smali: {line: 3689, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
 {com/saterskog/cell_lab/i.smali: {line: 3695, override:false, patches:{
-            'if-eq v0,v0, :chimera_bypass1',
+            'goto :chimera_bypass1',
             ':cond_chimera1',
             'sget v0, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I',
             'new-array v5, v0, [Lcom/saterskog/cell_lab/Gene;',
