@@ -5,7 +5,6 @@ import com.saterskog.cell_lab.accessors.AndroidAccess;
 import com.saterskog.cell_lab.accessors.GeneAccess;
 import com.saterskog.cell_lab.accessors.GenomeEditorAccess;
 
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Constructor;
@@ -16,8 +15,8 @@ import java.util.List;
 public class ChimeraHooks {
     private static final List<Object> mods = new ArrayList<>();
     private static boolean initialized=false;
-    public static final int DEFAULT_FPROPERTY_COUNT=7; //vanilla value
-    public static final int DEFAULT_IPROPERTY_COUNT=11; //vanilla value
+    public static final int VANILLA_FPROPERTY_COUNT=7,VANILLA_IPROPERTY_COUNT=11,VANILLA_MODES_COUNT=40; //vanilla value
+    public static final int VANILLA_VERSION = 95;
 
     protected static void initMods(String[] classNames) {
         if(initialized) return;
@@ -95,20 +94,10 @@ public class ChimeraHooks {
      */
     protected static boolean unlockChallengeHook(int challenge){
         //In this case, the first mod to be loaded and invoked wins the implementation race.
-        Method method = getFirstModImplementation("unlockChallengeHook",int.class);
-
-        if(method != null){
-            try {
-                return (boolean) method.invoke(challenge); //Only works with static methods
-            }catch(IllegalArgumentException e){
-                //If the method isn't static, then simply ignore it. To avoid crashing over essentially a nothingburger.
-                System.err.println("Non-fatal error: method unlockChallengeHook() must be static!");
-                return false;
-            }catch(Exception e){
-                e.printStackTrace();
-            }
+        Object ret = invokeFirstImplementation("unlockChallengeHook", new Class[]{int.class}, challenge);
+        if(ret != null){
+            return (boolean) ret;
         }
-
         return false; //Vanilla behavior
     }
 
@@ -145,21 +134,28 @@ public class ChimeraHooks {
             } catch (NoSuchMethodException e) {
                 // No implementation, ignore, keep searching.
             } catch (Exception e) {
+                unloadMod(mod);
                 e.printStackTrace();
             }
         }
     }
 
-    private static Method getFirstModImplementation(String methodName, Class<?>... args){
+    private static Object invokeFirstImplementation(String methodName, Class<?>[] paramTypes, Object... args){
         if (mods.isEmpty()) return null;
 
         for (Object mod : mods) {
             try {
-                Method method = mod.getClass().getMethod(methodName,args);
-                return method;
-            } catch (NoSuchMethodException e) {
+                Method method = mod.getClass().getMethod(methodName,paramTypes);
+                try {
+                    return method.invoke(mod, args);
+                } catch (IllegalArgumentException e){
+                    return method.invoke(args);
+                }
+            }
+            catch (NoSuchMethodException e) {
                 //Mod doesn't implement method, should ignore and move on...
             } catch (Exception e) {
+                unloadMod(mod);
                 e.printStackTrace();
             }
         }

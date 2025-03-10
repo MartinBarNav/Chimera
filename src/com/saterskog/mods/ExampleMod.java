@@ -1,6 +1,7 @@
 package com.saterskog.mods;
 
 import com.saterskog.cell_lab.ChimeraMod;
+import com.saterskog.cell_lab.accessors.CellAccess;
 import com.saterskog.cell_lab.accessors.GeneAccess;
 import com.saterskog.cell_lab.accessors.GeneProperty;
 import com.saterskog.cell_lab.accessors.GenomeEditorAccess;
@@ -13,8 +14,14 @@ public class ExampleMod {
     private static GeneProperty<Float>[] myProperties;
 
     public ExampleMod(){
-        myProperties = GeneAccess.requestAdditionalGeneProperties(1, float.class);
+        myProperties = GeneAccess.requestAdditionalGeneProperties(1, float.class, this);
         GeneAccess.setMaximumValueOfProperty(myProperties[0], 77.0f);
+
+        CellAccess.requestAdditionalModes(40, this);
+    }
+
+    public static boolean unlockChallengeHook(int id){
+        return true;
     }
 
     public static void onCreateGenomeEditorViewHook(GenomeEditorAccess access){

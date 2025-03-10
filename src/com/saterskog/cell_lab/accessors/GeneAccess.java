@@ -1,6 +1,7 @@
 package com.saterskog.cell_lab.accessors;
 
 import com.saterskog.cell_lab.ChimeraHooks;
+import com.saterskog.cell_lab.ChimeraMod;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -12,11 +13,11 @@ import java.util.ArrayList;
 public class GeneAccess extends Accessor{
     private float[] rgbColor,floatProperties;
     private int[] intProperties;
-    public static int fPropertiesCount=ChimeraHooks.DEFAULT_FPROPERTY_COUNT,intPropertiesCount=ChimeraHooks.DEFAULT_IPROPERTY_COUNT;
-    private static Field floatPropertiesMaxField,floatPropertiesMinField, intPropertiesMaxField;
+    public static int fPropertiesCount=ChimeraHooks.VANILLA_FPROPERTY_COUNT,intPropertiesCount=ChimeraHooks.VANILLA_IPROPERTY_COUNT;
+    private static Field floatPropertiesMaxFieldPointer,floatPropertiesMinFieldPointer, intPropertiesMaxFieldPointer;
     private static ArrayList<GeneProperty<Float>> modFloatProperties;
     private static ArrayList<GeneProperty<Integer>> modIntProperties;
-    private Field floatPropertiesField,intPropertiesField,rgbColorField;
+    private Field floatPropertiesFieldPointer,intPropertiesFieldPointer,rgbColorFieldPointer;
 
     public GeneAccess(Object gene, AndroidAccess parcel) throws RuntimeException {
         this(gene);
@@ -37,13 +38,13 @@ public class GeneAccess extends Accessor{
         super(gene);
 
         try{
-            this.rgbColorField = Class.forName("com.saterskog.cell_lab.Gene").getField("a");
-            this.floatPropertiesField = Class.forName("com.saterskog.cell_lab.Gene").getField("v");
-            this.intPropertiesField = Class.forName("com.saterskog.cell_lab.Gene").getField("u");
+            this.rgbColorFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("a");
+            this.floatPropertiesFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("v");
+            this.intPropertiesFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("u");
 
-            this.rgbColor = (float[]) rgbColorField.get(this.getObjectReference());
-            this.floatProperties = (float[]) floatPropertiesField.get(this.getObjectReference());
-            this.intProperties = (int[]) intPropertiesField.get(this.getObjectReference());
+            this.rgbColor = (float[]) rgbColorFieldPointer.get(this.getObjectReference());
+            this.floatProperties = (float[]) floatPropertiesFieldPointer.get(this.getObjectReference());
+            this.intProperties = (int[]) intPropertiesFieldPointer.get(this.getObjectReference());
         }catch(Exception e){
             throw new RuntimeException();
         }
@@ -62,20 +63,20 @@ public class GeneAccess extends Accessor{
         //It's important to NOT load the Gene class before this, otherwise the static block will run and fPropertiesCount will be 8 (the default)
         //and since the fields are final, it cannot be changed later.
         try {
-            floatPropertiesMaxField = Class.forName("com.saterskog.cell_lab.Gene").getField("A");
-            floatPropertiesMinField = Class.forName("com.saterskog.cell_lab.Gene").getField("z");
-            intPropertiesMaxField = Class.forName("com.saterskog.cell_lab.Gene").getField("w");
+            floatPropertiesMaxFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("A");
+            floatPropertiesMinFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("z");
+            intPropertiesMaxFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("w");
 
             int j = 0;
-            for (int i = ChimeraHooks.DEFAULT_FPROPERTY_COUNT; i < fPropertiesCount; i++) {
-                ((float[]) floatPropertiesMaxField.get(null))[i] = modFloatProperties.get(j).getMaximumValue();
-                ((float[]) floatPropertiesMinField.get(null))[i] = modFloatProperties.get(j).getMinimumValue();
+            for (int i = ChimeraHooks.VANILLA_FPROPERTY_COUNT; i < fPropertiesCount; i++) {
+                ((float[]) floatPropertiesMaxFieldPointer.get(null))[i] = modFloatProperties.get(j).getMaximumValue();
+                ((float[]) floatPropertiesMinFieldPointer.get(null))[i] = modFloatProperties.get(j).getMinimumValue();
                 j++;
             }
 
             j = 0;
-            for (int i = ChimeraHooks.DEFAULT_IPROPERTY_COUNT; i < intPropertiesCount; i++) {
-                ((float[]) intPropertiesMaxField.get(null))[i] = modIntProperties.get(j).getMaximumValue();
+            for (int i = ChimeraHooks.VANILLA_IPROPERTY_COUNT; i < intPropertiesCount; i++) {
+                ((float[]) intPropertiesMaxFieldPointer.get(null))[i] = modIntProperties.get(j).getMaximumValue();
                 j++;
             }
 
@@ -89,7 +90,7 @@ public class GeneAccess extends Accessor{
         if(ChimeraHooks.isCallerInitializer(1)) {
             property.setMinimumValue(value);
             if(value instanceof Float){
-                modFloatProperties.get(property.getIndex()-ChimeraHooks.DEFAULT_FPROPERTY_COUNT).setMinimumValue((float) value);
+                modFloatProperties.get(property.getIndex()-ChimeraHooks.VANILLA_FPROPERTY_COUNT).setMinimumValue((float) value);
             }
         }
 
@@ -99,23 +100,24 @@ public class GeneAccess extends Accessor{
         if(ChimeraHooks.isCallerInitializer(1)) {
             property.setMaximumValue(value);
             if(value instanceof Float){
-                modFloatProperties.get(property.getIndex()-ChimeraHooks.DEFAULT_FPROPERTY_COUNT).setMaximumValue((float) value);
+                modFloatProperties.get(property.getIndex()-ChimeraHooks.VANILLA_FPROPERTY_COUNT).setMaximumValue((float) value);
             }
             else if(value instanceof  Integer){
-                modIntProperties.get(property.getIndex()-ChimeraHooks.DEFAULT_IPROPERTY_COUNT).setMaximumValue((int) value);
+                modIntProperties.get(property.getIndex()-ChimeraHooks.VANILLA_IPROPERTY_COUNT).setMaximumValue((int) value);
             }
         }
     }
 
     /** This method should only be called on mod initialization, either inside a static block or the mod constructor.
-     * Failure to do so will result in the offending mod getting unloaded.
      */
     @SuppressWarnings("unchecked")
-    public static <T extends Number> GeneProperty<T>[] requestAdditionalGeneProperties(int amount, Class<T> type) {
+    public static <T extends Number> GeneProperty<T>[] requestAdditionalGeneProperties(int amount, Class<T> type, Object mod) {
         if (!ChimeraHooks.isCallerInitializer(1)) {
-            System.err.println("Request for additional " + type.getSimpleName().toLowerCase()
-                    + " properties denied! Request must be made during mod initialization!");
-            return new GeneProperty[0];
+            throw new RuntimeException("Request for additional" + type.getSimpleName().toLowerCase() +
+                    "properties denied! Request must be made during mod initialization!");
+        }
+        if(!mod.getClass().isAnnotationPresent(ChimeraMod.class)){
+            throw new RuntimeException("Request for additional properties denied! Invalid mod reference.");
         }
 
         GeneProperty<T>[] properties = new GeneProperty[amount];
@@ -125,10 +127,12 @@ public class GeneAccess extends Accessor{
                 properties[i] = new GeneProperty<>(fPropertiesCount + i);
                 properties[i].setMaximumValue((T) Float.valueOf(1.f));
                 properties[i].setMinimumValue((T) Float.valueOf(0.f));
+                properties[i].setMod(mod);
                 modFloatProperties.add((GeneProperty<Float>) properties[i]);
             } else if (type == int.class) {
                 properties[i] = new GeneProperty<>(intPropertiesCount + i);
                 properties[i].setMaximumValue((T) Integer.valueOf(1));
+                properties[i].setMod(mod);
                 modIntProperties.add((GeneProperty<Integer>) properties[i]);
             }
         }
