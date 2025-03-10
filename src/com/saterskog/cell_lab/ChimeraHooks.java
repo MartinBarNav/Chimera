@@ -134,6 +134,7 @@ public class ChimeraHooks {
             } catch (NoSuchMethodException e) {
                 // No implementation, ignore, keep searching.
             } catch (Exception e) {
+                unloadMod(mod);
                 e.printStackTrace();
             }
         }
@@ -154,6 +155,7 @@ public class ChimeraHooks {
             catch (NoSuchMethodException e) {
                 //Mod doesn't implement method, should ignore and move on...
             } catch (Exception e) {
+                unloadMod(mod);
                 e.printStackTrace();
             }
         }

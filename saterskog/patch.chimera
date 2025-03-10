@@ -60,8 +60,8 @@
 {com/saterskog/cell_lab/Gene.smali: {line: 545, override:true, patches:{'sget v5, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 939, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 1264, override:true, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
-{com/saterskog/cell_lab/Gene.smali: {line: 1569, override:true, patches:{'sget v9, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
-{com/saterskog/cell_lab/Gene.smali: {line: 1579, override:true, patches:{'sget v9, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 1569, override:true, patches:{'sget v9, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 1579, override:true, patches:{'sget v9, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
 
 {com/saterskog/cell_lab/Gene.smali: {line: 909, override:false, patches:{'invoke-static {p0, p1}, Lcom/saterskog/cell_lab/ChimeraHooks;->loadGeneFromParcel(Ljava/lang/Object;Ljava/lang/Object;)V'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 3434, override:false, patches:{'invoke-static {p0, p1}, Lcom/saterskog/cell_lab/ChimeraHooks;->saveGeneToParcel(Ljava/lang/Object;Ljava/lang/Object;)V'}}}
