@@ -17,6 +17,7 @@ public class ChimeraHooks {
     private static boolean initialized=false;
     public static final int VANILLA_FPROPERTY_COUNT=7,VANILLA_IPROPERTY_COUNT=11,VANILLA_MODES_COUNT=40; //vanilla value
     public static final int VANILLA_VERSION = 95;
+    protected static boolean SandboxMode=false;
 
     protected static void initMods(String[] classNames) {
         if(initialized) return;
@@ -39,6 +40,10 @@ public class ChimeraHooks {
 
         GeneAccess.loadStatic();
         initialized=true;
+    }
+
+    public static void enableSandbox(){
+        SandboxMode=true;
     }
 
     // In case a mod misbehaves
@@ -80,30 +85,13 @@ public class ChimeraHooks {
         invokeModImplementationWithAccess("onSaveGeneToParcel",access);
     }
 
-    protected static void onCreateGeditorHook(Object geditorView, ArrayList<Object> controllers){
-        GenomeEditorAccess access = new GenomeEditorAccess(geditorView, controllers);
-
+    protected static void onCreateGeditorHook(Object geditorView, ArrayList<Object> controllers, String[] modesString){
+        GenomeEditorAccess access = new GenomeEditorAccess(geditorView, controllers, modesString);
         invokeModImplementationWithAccess("onCreateGenomeEditorViewHook",access);
     }
 
 
-    /**
-     * Invoked from j.smali and can override vanilla behavior.
-     * @param challenge an integer ID mapped to a given challenge in the challenge screen
-     * @return false for vanilla behavior, true to unlock given challenge
-     */
-    protected static boolean unlockChallengeHook(int challenge){
-        //In this case, the first mod to be loaded and invoked wins the implementation race.
-        Object ret = invokeFirstImplementation("unlockChallengeHook", new Class[]{int.class}, challenge);
-        if(ret != null){
-            return (boolean) ret;
-        }
-        return false; //Vanilla behavior
-    }
-
     // Reflection utilities
-
-
     private static void invokeModImplementation(String methodName, Object... args) {
         Class<?>[] paramTypes = new Class[args.length];
         for (int i=0;i<args.length;i++){
@@ -136,6 +124,7 @@ public class ChimeraHooks {
             } catch (Exception e) {
                 unloadMod(mod);
                 e.printStackTrace();
+                System.err.print(e.getCause());
             }
         }
     }

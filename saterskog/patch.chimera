@@ -1,6 +1,5 @@
-{com/saterskog/cell_lab/j.smali: {line: 2532, override: false, patches:{
-        'invoke-static {p0}, Lcom/saterskog/cell_lab/ChimeraHooks;->unlockChallengeHook(I)Z',
-        'move-result v0',
+{com/saterskog/cell_lab/j.smali: {line: 2571, override: false, patches:{
+        'sget-boolean v0, Lcom/saterskog/cell_lab/ChimeraHooks;->SandboxMode:Z',
         'if-eqz v0, :no_return',
         'return v0',
         ':no_return'
@@ -46,22 +45,28 @@
    }
 }
 
-{com/saterskog/cell_lab/i.smali: {line: 6107, override:false, patches:{
-            'invoke-static {v0,v2}, Lcom/saterskog/cell_lab/ChimeraHooks;->onCreateGeditorHook(Ljava/lang/Object;Ljava/util/ArrayList;)V'
-        }
-    }
-}
+{com/saterskog/cell_lab/i.smali: {line: 6290, override:false, patches:{
+            'invoke-static {v0,v11,v8}, Lcom/saterskog/cell_lab/ChimeraHooks;->onCreateGeditorHook(Ljava/lang/Object;Ljava/util/ArrayList;[Ljava/lang/String;)V'
+            }}}
 
+{com/saterskog/cell_lab/Gene.smali: {line: 104, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->intPropertiesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 111, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->intPropertiesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 118, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->intPropertiesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 125, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 132, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 148, override:true, patches:{'sget v2, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 157, override:true, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 484, override:true, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/GeneAccess;->intPropertiesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 507, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 545, override:true, patches:{'sget v5, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 547, override:true, patches:{'sget v4, Lcom/saterskog/cell_lab/accessors/GeneAccess;->intPropertiesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 916, override:true, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/GeneAccess;->intPropertiesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 939, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 1050, override:true, patches:{'sget v5, Lcom/saterskog/cell_lab/accessors/GeneAccess;->intPropertiesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 1264, override:true, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 1569, override:true, patches:{'sget v9, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 1579, override:true, patches:{'sget v9, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 2922, override:true, patches:{'sget v1, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
 
 {com/saterskog/cell_lab/Gene.smali: {line: 909, override:false, patches:{'invoke-static {p0, p1}, Lcom/saterskog/cell_lab/ChimeraHooks;->loadGeneFromParcel(Ljava/lang/Object;Ljava/lang/Object;)V'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 3434, override:false, patches:{'invoke-static {p0, p1}, Lcom/saterskog/cell_lab/ChimeraHooks;->saveGeneToParcel(Ljava/lang/Object;Ljava/lang/Object;)V'}}}
@@ -76,8 +81,11 @@
 {com/saterskog/cell_lab/Cell.smali: {line: 1381, override:true, patches:{'sget v7, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
 {com/saterskog/cell_lab/Cell.smali: {line: 1948, override:true, patches:{'sget v7, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
 {com/saterskog/cell_lab/Cell.smali: {line: 2398, override:true, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
+{com/saterskog/cell_lab/Cell.smali: {line: 1397, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
+{com/saterskog/cell_lab/Cell.smali: {line: 1955, override:true, patches:{'sget v1, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
 
 {com/saterskog/cell_lab/PlayActivity.smali: {line: 1867, override:true, patches:{'sget v18, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
+{com/saterskog/cell_lab/PlayActivity.smali: {line: 206, override:true, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
 
 {com/saterskog/cell_lab/i.smali: {line: 378, override:true, patches:{'sget v1, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
 {com/saterskog/cell_lab/i.smali: {line: 384, override:true, patches:{'sget v1, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
@@ -154,6 +162,7 @@
 {com/saterskog/cell_lab/CellWorld.smali: {line: 22229, override:true, patches:{'sget v9, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
 {com/saterskog/cell_lab/CellWorld.smali: {line: 22386, override:true, patches:{'sget v14, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
 {com/saterskog/cell_lab/CellWorld.smali: {line: 24830, override:true, patches:{'sget v8, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
+{com/saterskog/cell_lab/CellWorld.smali: {line: 28041, override:true, patches:{'sget v2, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
 
 {com/saterskog/cell_lab/q.smali: {line: 425, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
 {com/saterskog/cell_lab/q.smali: {line: 436, override:true, patches:{'sget v2, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
@@ -161,7 +170,19 @@
 {com/saterskog/cell_lab/q.smali: {line: 4213, override:true, patches:{'sget v1, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
 {com/saterskog/cell_lab/q.smali: {line: 5446, override:true, patches:{'sget v5, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
 {com/saterskog/cell_lab/q.smali: {line: 5460, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/CellAccess;->modesCount:I'}}}
+{com/saterskog/cell_lab/q.smali: {line: 3216, override:true, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
 
 {com/saterskog/cell_lab/n.smali: {line: 569, override:true, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
 
 {com/saterskog/cell_lab/j.smali: {line: 2061, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/GeneAccess;->fPropertiesCount:I'}}}
+{com/saterskog/cell_lab/j.smali: {line: 3484, override:true, patches:{'sget v2, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
+
+{com/saterskog/cell_lab/f$2.smali: {line: 173, override:true, patches:{'sget v4, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
+
+{com/saterskog/cell_lab/p.smali: {line: 3116, override:true, patches:{'sget v1, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
+
+{com/saterskog/cell_lab/g$3.smali: {line: 104, override:true, patches:{'sget v5, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
+
+{com/saterskog/cell_lab/Environment.smali: {line: 581, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
+{com/saterskog/cell_lab/Environment.smali: {line: 979, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
+

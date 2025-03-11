@@ -76,7 +76,7 @@ public class GeneAccess extends Accessor{
 
             j = 0;
             for (int i = ChimeraHooks.VANILLA_IPROPERTY_COUNT; i < intPropertiesCount; i++) {
-                ((float[]) intPropertiesMaxFieldPointer.get(null))[i] = modIntProperties.get(j).getMaximumValue();
+                ((int[]) intPropertiesMaxFieldPointer.get(null))[i] = modIntProperties.get(j).getMaximumValue();
                 j++;
             }
 
