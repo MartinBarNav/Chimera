@@ -185,4 +185,3 @@
 
 {com/saterskog/cell_lab/Environment.smali: {line: 581, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
 {com/saterskog/cell_lab/Environment.smali: {line: 979, override:true, patches:{'sget v0, Lcom/saterskog/cell_lab/accessors/CellAccess;->formatVersion:I'}}}
-

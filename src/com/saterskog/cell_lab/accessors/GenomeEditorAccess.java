@@ -95,14 +95,14 @@ public class GenomeEditorAccess extends Accessor{
                 return this;
             }
 
-            public Builder contentLabels(String[] l){
+            public Builder setItems(String[] l){
                 this.contentLabels = l;
                 this.modes=false;
                 return this;
             }
 
-            public Builder showModes(boolean z){
-                this.modes = z;
+            public Builder showModes(){
+                this.modes = true;
                 this.contentLabels=modesPrefix;
                 return this;
             }

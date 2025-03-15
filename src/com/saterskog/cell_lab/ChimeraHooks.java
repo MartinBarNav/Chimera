@@ -1,9 +1,6 @@
 package com.saterskog.cell_lab;
 
-import com.saterskog.cell_lab.accessors.Accessor;
-import com.saterskog.cell_lab.accessors.AndroidAccess;
-import com.saterskog.cell_lab.accessors.GeneAccess;
-import com.saterskog.cell_lab.accessors.GenomeEditorAccess;
+import com.saterskog.cell_lab.accessors.*;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -15,7 +12,7 @@ import java.util.List;
 public class ChimeraHooks {
     private static final List<Object> mods = new ArrayList<>();
     private static boolean initialized=false;
-    public static final int VANILLA_FPROPERTY_COUNT=7,VANILLA_IPROPERTY_COUNT=11,VANILLA_MODES_COUNT=40; //vanilla value
+    public static final int VANILLA_FPROPERTY_COUNT=7,VANILLA_IPROPERTY_COUNT=11,VANILLA_MODES_COUNT=40,VANILLA_SIGNAL_COUNT=4; //vanilla value
     public static final int VANILLA_VERSION = 95;
     protected static boolean SandboxMode=false;
 
@@ -51,8 +48,8 @@ public class ChimeraHooks {
         mods.remove(mod);
     }
 
-    protected static void loadGeneFromStream(Object gene, ObjectInputStream stream){
-        GeneAccess access = new GeneAccess(gene, stream);
+    protected static void loadGeneFromStream(Object gene, ObjectInputStream stream, int version){
+        GeneAccess access = new GeneAccess(gene, stream, version);
         try {
             invokeModImplementationWithAccess("onLoadGeneFromStream", access);
         } catch (Exception e) {
@@ -90,6 +87,9 @@ public class ChimeraHooks {
         invokeModImplementationWithAccess("onCreateGenomeEditorViewHook",access);
     }
 
+    public static int getCurrentFormatVersion(){
+        return CellAccess.getCurrentFormatVersion();
+    }
 
     // Reflection utilities
     private static void invokeModImplementation(String methodName, Object... args) {
@@ -175,7 +175,6 @@ public class ChimeraHooks {
     }
 
     //This method traces the stack to make sure that the caller at [frameDepth] (skipping this method's frame) is a constructor or static block
-    // For more info on stack frames, read: https://www.geeksforgeeks.org/stack-frame-in-computer-organization/
     public static boolean isCallerInitializer(int frameDepth) {
         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace(); //array of stack frames
 

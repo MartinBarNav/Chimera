@@ -27,16 +27,16 @@ public class ExampleMod {
 
     public static void onCreateGenomeEditorViewHook(GenomeEditorAccess access){
         GenomeEditorAccess.Slider mySlider = GenomeEditorAccess.sliderBuilder()
-                .name("Test")
+                .name("My Slider")
                 .description("Test description")
                 .controlProperty(myProperties[0])
                 .build();
 
         GenomeEditorAccess.Droplist myDroplist = GenomeEditorAccess.droplistBuilder()
-                .name("Test")
+                .name("My Droplist")
                 .description("Test description")
                 .controlProperty(myIntProperties[0])
-                .showModes(true)
+                .showModes()
                 .build();
 
         access.showSlider(mySlider);
@@ -44,22 +44,24 @@ public class ExampleMod {
     }
 
     public static void onSaveGeneToStream(GeneAccess geneAccess) {
-        geneAccess.savePropertiesToStream(myProperties, float.class);
-        geneAccess.savePropertiesToStream(myIntProperties, int.class);
+        geneAccess.savePropertiesToStream(myProperties);
+        geneAccess.savePropertiesToStream(myIntProperties);
     }
 
     public void onLoadGeneFromStream(GeneAccess geneAccess){
-        geneAccess.loadPropertiesFromStream(myProperties, float.class);
-        geneAccess.loadPropertiesFromStream(myIntProperties, int.class);
+        if(geneAccess.getFormatVersion() == ChimeraHooks.getCurrentFormatVersion()) {
+            geneAccess.loadPropertiesFromStream(myProperties);
+            geneAccess.loadPropertiesFromStream(myIntProperties);
+        }
     }
 
     public void onSaveGeneToParcel(GeneAccess geneAccess){
-        geneAccess.savePropertiesToParcel(myProperties, float.class);
-        geneAccess.savePropertiesToParcel(myIntProperties, int.class);
+        geneAccess.savePropertiesToParcel(myProperties);
+        geneAccess.savePropertiesToParcel(myIntProperties);
     }
 
     public void onLoadGeneFromParcel(GeneAccess geneAccess){
-        geneAccess.loadPropertiesFromParcel(myProperties, float.class);
-        geneAccess.loadPropertiesFromParcel(myIntProperties, int.class);
+        geneAccess.loadPropertiesFromParcel(myProperties);
+        geneAccess.loadPropertiesFromParcel(myIntProperties);
     }
 }
