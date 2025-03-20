@@ -14,18 +14,18 @@ public class GeneAccess extends Accessor{
     private float[] rgbColor,floatProperties;
     private int[] intProperties;
     public static int fPropertiesCount=ChimeraHooks.VANILLA_FPROPERTY_COUNT,intPropertiesCount=ChimeraHooks.VANILLA_IPROPERTY_COUNT;
-    private static Field floatPropertiesMaxFieldPointer,floatPropertiesMinFieldPointer, intPropertiesMaxFieldPointer;
     private static ArrayList<GeneProperty<Float>> modFloatProperties;
     private static ArrayList<GeneProperty<Integer>> modIntProperties;
-    private Field floatPropertiesFieldPointer,intPropertiesFieldPointer,rgbColorFieldPointer;
+    private int formatVersion;
 
     public GeneAccess(Object gene, AndroidAccess parcel) throws RuntimeException {
         this(gene);
         setParcel(parcel);
     }
 
-    public GeneAccess(Object gene, ObjectInputStream stream) {
+    public GeneAccess(Object gene, ObjectInputStream stream, int version) {
         this(gene);
+        this.formatVersion = version;
         setInStream(stream);
     }
 
@@ -38,9 +38,9 @@ public class GeneAccess extends Accessor{
         super(gene);
 
         try{
-            this.rgbColorFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("a");
-            this.floatPropertiesFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("v");
-            this.intPropertiesFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("u");
+            Field rgbColorFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("a");
+            Field floatPropertiesFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("v");
+            Field intPropertiesFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("u");
 
             this.rgbColor = (float[]) rgbColorFieldPointer.get(this.getObjectReference());
             this.floatProperties = (float[]) floatPropertiesFieldPointer.get(this.getObjectReference());
@@ -63,9 +63,9 @@ public class GeneAccess extends Accessor{
         //It's important to NOT load the Gene class before this, otherwise the static block will run and fPropertiesCount will be 8 (the default)
         //and since the fields are final, it cannot be changed later.
         try {
-            floatPropertiesMaxFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("A");
-            floatPropertiesMinFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("z");
-            intPropertiesMaxFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("w");
+            Field floatPropertiesMaxFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("A");
+            Field floatPropertiesMinFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("z");
+            Field intPropertiesMaxFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("w");
 
             int j = 0;
             for (int i = ChimeraHooks.VANILLA_FPROPERTY_COUNT; i < fPropertiesCount; i++) {
@@ -76,7 +76,7 @@ public class GeneAccess extends Accessor{
 
             j = 0;
             for (int i = ChimeraHooks.VANILLA_IPROPERTY_COUNT; i < intPropertiesCount; i++) {
-                ((float[]) intPropertiesMaxFieldPointer.get(null))[i] = modIntProperties.get(j).getMaximumValue();
+                ((int[]) intPropertiesMaxFieldPointer.get(null))[i] = modIntProperties.get(j).getMaximumValue();
                 j++;
             }
 
@@ -84,6 +84,10 @@ public class GeneAccess extends Accessor{
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public int getFormatVersion(){
+        return this.formatVersion;
     }
 
     public static <T extends Number> void setMinimumValueOfProperty(GeneProperty<T> property, T value){
@@ -94,6 +98,16 @@ public class GeneAccess extends Accessor{
             }
         }
 
+    }
+
+    public Number getValueOf(GeneProperty<? extends Number> property){
+        if(property.type == int.class){
+            return intProperties[property.getIndex()];
+        }
+        else if(property.type == float.class){
+            return floatProperties[property.getIndex()];
+        }
+        return null;
     }
 
     public static <T extends Number> void setMaximumValueOfProperty(GeneProperty<T> property, T value){
@@ -125,12 +139,14 @@ public class GeneAccess extends Accessor{
         for (int i = 0; i < amount; i++) {
             if (type == float.class) {
                 properties[i] = new GeneProperty<>(fPropertiesCount + i);
+                properties[i].type = float.class;
                 properties[i].setMaximumValue((T) Float.valueOf(1.f));
                 properties[i].setMinimumValue((T) Float.valueOf(0.f));
                 properties[i].setMod(mod);
                 modFloatProperties.add((GeneProperty<Float>) properties[i]);
             } else if (type == int.class) {
                 properties[i] = new GeneProperty<>(intPropertiesCount + i);
+                properties[i].type = int.class;
                 properties[i].setMaximumValue((T) Integer.valueOf(1));
                 properties[i].setMod(mod);
                 modIntProperties.add((GeneProperty<Integer>) properties[i]);
@@ -148,41 +164,41 @@ public class GeneAccess extends Accessor{
 
     //TODO: make safety checks. This code is currently very unsafe.
 
-    public <T extends Number> void savePropertiesToParcel(GeneProperty<T>[] properties, Class<T> type){
+    public <T extends Number> void savePropertiesToParcel(GeneProperty<T>[] properties){
         if(this.getParcel() == null){
             System.err.println("Gene access does not contain a parcel reference! Was savePropertiesToParcel() called outside" +
                     " the scope of a valid hook?");
             return;
         }
         for(GeneProperty<T> property : properties) {
-            if(type == float.class) {
+            if(property.type == float.class) {
                 ChimeraHooks.invokeMethod(this.getParcel().getObjectReference(), "writeFloat", new Class[]{float.class},
                         this.floatProperties[property.getIndex()]);
             }
-            else if(type == int.class){
+            else if(property.type == int.class){
                 ChimeraHooks.invokeMethod(this.getParcel().getObjectReference(), "writeInt", new Class[]{int.class},
                         this.intProperties[property.getIndex()]);
             }
         }
     }
 
-    public <T extends Number> void loadPropertiesFromParcel(GeneProperty<T>[] properties, Class<T> type){
+    public <T extends Number> void loadPropertiesFromParcel(GeneProperty<T>[] properties){
         if(this.getParcel() == null){
             System.err.println("Gene access does not contain a parcel reference! Was loadPropertiesFromParcel() called outside" +
                     " the scope of a valid hook?");
             return;
         }
         for(GeneProperty<T> property : properties) {
-            if (type == float.class) {
+            if (property.type== float.class) {
                 this.floatProperties[property.getIndex()] = (float) ChimeraHooks.invokeMethodNoParams(this.getParcel().getObjectReference(), "readFloat");
             }
-            else if(type == int.class){
+            else if(property.type == int.class){
                 this.intProperties[property.getIndex()] = (int) ChimeraHooks.invokeMethodNoParams(this.getParcel().getObjectReference(), "readInt");
             }
         }
     }
 
-    public <T extends Number> void savePropertiesToStream(GeneProperty<T>[] properties, Class<T> type){
+    public <T extends Number> void savePropertiesToStream(GeneProperty<T>[] properties){
         if(this.getOutStream() == null){
             System.err.println("Gene access does not contain a stream reference! Was savePropertiesToStream() called outside" +
                     " the scope of a valid hook?");
@@ -190,18 +206,18 @@ public class GeneAccess extends Accessor{
         }
 
         for(GeneProperty<T> property : properties){
-            if(type == float.class) {
+            if(property.type == float.class) {
                 ChimeraHooks.invokeMethod(this.getOutStream(), "writeFloat", new Class[]{float.class},
                         this.floatProperties[property.getIndex()]);
             }
-            else if(type == int.class){
+            else if(property.type == int.class){
                 ChimeraHooks.invokeMethod(this.getOutStream(), "writeInt", new Class[]{int.class},
                         this.intProperties[property.getIndex()]);
             }
         }
     }
 
-    public <T extends Number> void loadPropertiesFromStream(GeneProperty<T>[] properties, Class<T> type){
+    public <T extends Number> void loadPropertiesFromStream(GeneProperty<T>[] properties){
         if(this.getInStream() == null){
             System.err.println("Gene access does not contain a stream reference! Was loadPropertiesFromStream() called outside" +
                     " the scope of a valid hook?");
@@ -210,10 +226,10 @@ public class GeneAccess extends Accessor{
 
         for(GeneProperty<T> property : properties){
             try {
-                if(type == float.class) {
+                if(property.type == float.class) {
                     this.floatProperties[property.getIndex()] = this.getInStream().readFloat();
                 }
-                else if(type == int.class){
+                else if(property.type == int.class){
                     this.intProperties[property.getIndex()] = this.getInStream().readInt();
                 }
             } catch (EOFException e) {

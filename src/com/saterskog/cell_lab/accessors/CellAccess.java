@@ -9,6 +9,7 @@ public class CellAccess extends Accessor{
     private static Field modesFieldPointer;
     public static int modesCount= ChimeraHooks.VANILLA_MODES_COUNT;
     public static int formatVersion=ChimeraHooks.VANILLA_VERSION;
+    public static int signalCount=ChimeraHooks.VANILLA_SIGNAL_COUNT;
 
     protected CellAccess(Object obj) {
         super(obj);
@@ -22,16 +23,8 @@ public class CellAccess extends Accessor{
         }
     }
 
-    public static void requestFormatVersionUpgrade(int amount, Object mod){
-        if (!ChimeraHooks.isCallerInitializer(1)){
-            throw new RuntimeException("Request for format version upgrade denied!"
-                    + " Request must be made during mod initialization!");
-        }
-        if(!mod.getClass().isAnnotationPresent(ChimeraMod.class)){
-            throw new RuntimeException("Request for format version upgrade denied! Invalid mod reference.");
-        }
-
-        formatVersion += amount;
+    public static int getCurrentFormatVersion(){
+        return formatVersion;
     }
 
     public static CellProperty[] requestAdditionalModes(int amount, Object mod){
@@ -49,6 +42,7 @@ public class CellAccess extends Accessor{
             modesCount++;
         }
 
+        formatVersion++;
         return extraModes;
     }
 

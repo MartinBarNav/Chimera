@@ -7,6 +7,7 @@ public class GeneProperty<T extends Number> {
     private int index;
     private T minimumValue, maximumValue;
     private Object ownerMod;
+    protected Object type;
 
     protected GeneProperty(int index){
         this.index = index;
