@@ -51,27 +51,4 @@ public abstract class Accessor {
         return this.inStream;
     }
 
-    public void closeInStream(){
-        try {
-            this.inStream.close();
-            this.inStream = null;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void closeOutStream(){
-        try {
-            this.outStream.close();
-            this.outStream = null;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void closeParcel(){
-        ChimeraHooks.invokeMethodNoParams(this.parcel,"recycle");
-        this.parcel = null;
-    }
-
 }

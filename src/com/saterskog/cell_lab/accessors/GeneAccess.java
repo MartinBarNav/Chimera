@@ -159,6 +159,8 @@ public class GeneAccess extends Accessor{
             intPropertiesCount += amount;
         }
 
+        ChimeraHooks.modFormatVersion++;
+
         return properties;
     }
 

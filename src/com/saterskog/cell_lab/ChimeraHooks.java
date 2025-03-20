@@ -14,6 +14,7 @@ public class ChimeraHooks {
     private static boolean initialized=false;
     public static final int VANILLA_FPROPERTY_COUNT=7,VANILLA_IPROPERTY_COUNT=11,VANILLA_MODES_COUNT=40,VANILLA_SIGNAL_COUNT=4; //vanilla value
     public static final int VANILLA_VERSION = 95;
+    public static int modFormatVersion=VANILLA_VERSION;
     protected static boolean SandboxMode=false;
 
     protected static void initMods(String[] classNames) {
@@ -46,6 +47,21 @@ public class ChimeraHooks {
     // In case a mod misbehaves
     public static void unloadMod(Object mod){
         mods.remove(mod);
+    }
+
+    protected static void loadCellFromStream(Object cell, ObjectInputStream stream, int version){
+        CellAccess access = new CellAccess(cell,stream,version);
+        try {
+            invokeModImplementationWithAccess("onLoadCellFromStream", access);
+        } catch (Exception e) {
+            System.err.println("Error while reading cell stream. Possible attempt to read non-existant" +
+                    " custom property?");
+        }
+    }
+
+    protected static void saveCellToStream(Object cell, ObjectOutputStream stream){
+        CellAccess access = new CellAccess(cell,stream);
+        invokeModImplementationWithAccess("onSaveCellToStream", access);
     }
 
     protected static void loadGeneFromStream(Object gene, ObjectInputStream stream, int version){
@@ -88,7 +104,7 @@ public class ChimeraHooks {
     }
 
     public static int getCurrentFormatVersion(){
-        return CellAccess.getCurrentFormatVersion();
+        return modFormatVersion;
     }
 
     // Reflection utilities

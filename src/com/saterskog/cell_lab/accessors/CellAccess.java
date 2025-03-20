@@ -3,13 +3,27 @@ package com.saterskog.cell_lab.accessors;
 import com.saterskog.cell_lab.ChimeraHooks;
 import com.saterskog.cell_lab.ChimeraMod;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 
 public class CellAccess extends Accessor{
     private static Field modesFieldPointer;
     public static int modesCount= ChimeraHooks.VANILLA_MODES_COUNT;
-    public static int formatVersion=ChimeraHooks.VANILLA_VERSION;
-    public static int signalCount=ChimeraHooks.VANILLA_SIGNAL_COUNT;
+    public int formatVersion=ChimeraHooks.VANILLA_VERSION;
+    // Cell Lab uses a double buffer (signal count*2) for (diffusion?) calculations.
+    public static int signalCount=ChimeraHooks.VANILLA_SIGNAL_COUNT, doubledSignalCount=ChimeraHooks.VANILLA_SIGNAL_COUNT*2;
+
+    public CellAccess(Object obj, ObjectInputStream stream, int vers){
+        this(obj);
+        setInStream(stream);
+        this.formatVersion = vers;
+    }
+
+    public CellAccess(Object obj, ObjectOutputStream stream){
+        this(obj);
+        setOutStream(stream);
+    }
 
     protected CellAccess(Object obj) {
         super(obj);
@@ -23,9 +37,7 @@ public class CellAccess extends Accessor{
         }
     }
 
-    public static int getCurrentFormatVersion(){
-        return formatVersion;
-    }
+    public int getFormatVersion(){return this.formatVersion;}
 
     public static CellProperty[] requestAdditionalModes(int amount, Object mod){
         if (!ChimeraHooks.isCallerInitializer(1)){
@@ -39,10 +51,11 @@ public class CellAccess extends Accessor{
         CellProperty[] extraModes = new CellProperty[amount];
         for(int i=0;i<amount;i++){
             extraModes[i] = new CellProperty(modesCount);
+            extraModes[i].setMod(mod);
             modesCount++;
         }
 
-        formatVersion++;
+        ChimeraHooks.modFormatVersion++;
         return extraModes;
     }
 
