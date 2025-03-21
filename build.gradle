@@ -13,6 +13,19 @@
 * There certainly is a more straightfoward way to convert java to smali and I will switch to that later on, but for testing purposes baksmali works well.
 */
 
+repositories {
+    google()
+    mavenCentral()
+    maven {
+        url 'https://storage.googleapis.com/r8-releases/raw'
+    }
+}
+
+dependencies {
+    configurations.maybeCreate("r8")
+    r8 "com.android.tools:r8:8.2.55"  // Correct version from R8's own repository
+}
+
 // Task to compile Chimera-specific Java files
 task buildChimera(type: Exec) {
     description 'Compiles Chimera Java files into build/chimera directory'
@@ -22,9 +35,9 @@ task buildChimera(type: Exec) {
             .collect { it.absolutePath }
 
     file('build/chimera').mkdirs()
-    commandLine 'javac', '-d', 'build/chimera', *javaFiles
+    // Using --release since android tends to lag behind newer jdks and using jdk 21 makes d8 throw an error due to it being too new.
+    commandLine 'javac','--release','17','-d', 'build/chimera', *javaFiles
 }
-
 
 task buildAll(type: Exec) {
     description 'Compiles all Java files into build/chimera directory'
@@ -34,8 +47,8 @@ task buildAll(type: Exec) {
             .collect { it.absolutePath }
 
     file('build/chimera').mkdirs()
-
-    commandLine 'javac', '-d', 'build/chimera', *javaFiles
+    // Using --release since android tends to lag behind newer jdks and using jdk 21 makes d8 throw an error due to it being too new.
+    commandLine 'javac', '--release', '17','-d', 'build/chimera', *javaFiles
 }
 
 // Temporary!
@@ -46,20 +59,21 @@ task buildMod {
 }
 
 // Task to generate DEX file for mod classes Dont mind the debugging. I'm losing my mind over here.
-// Hey i've never used gradle before. I don't get the appeal, quite frankly, the syntax is hella ugly...
-task getDex(type: Exec) {
-    description 'Converts mod class files to DEX format'
+tasks.register('getDex', Exec) {
+    description 'Converts mod class files to DEX format using AGP D8'
     dependsOn buildMod
 
-    workingDir file('tools')
     def classDir = file('build/chimera/com/saterskog')
     def outputDir = file('build/dex_output')
-
 
     inputs.dir(classDir)
     outputs.dir(outputDir)
 
     doFirst {
+        def d8Jar = configurations.r8.files.find { it.name.contains("r8") }
+        if (d8Jar == null) {
+            throw new GradleException("D8 JAR not found in dependencies. Make sure R8 is included!")
+        }
 
         def classes = fileTree(classDir).include('**/*.class').collect { it.absolutePath }
         println "Found class files: ${classes ?: 'None'}"
@@ -71,7 +85,7 @@ task getDex(type: Exec) {
             throw new GradleException("No class files found in ${classDir.absolutePath}")
         }
 
-        commandLine './d8', '--output', outputDir, *classes
+        commandLine 'java', '-cp', d8Jar, 'com.android.tools.r8.D8', '--output', outputDir, *classes
     }
 }
 
@@ -214,4 +228,6 @@ task cleanAPK(type: Delete) {
     delete 'saterskog/apk'
 }
 
-
+task debugJavac(type: Exec) {
+    commandLine 'javac', '-version'
+}

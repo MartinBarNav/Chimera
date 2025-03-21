@@ -16,6 +16,21 @@ public class GeneAccess extends Accessor{
     private static ArrayList<GeneProperty<Integer>> modIntProperties;
     private int formatVersion;
 
+    public enum StaticArray{
+        INTMAX,
+        FMIN,
+        FMAX
+    }
+    /**
+     * Represents a pending modification to a static array, specifying the index at which a new value should be inserted.
+     * These modifications are collected in a list (or queue) and applied all at once during class loading to patch the vanilla static field contents.
+     *
+     * @param val The type of value to be inserted, subclass of {@link Number}.
+     * @param type an entry in the StaticArray enum mapped to the target static array
+     */
+    public record QueuedStaticChange(int index, Number val, StaticArray type) {}
+    private static ArrayList<QueuedStaticChange> queuedChanges;
+
     //Cell lab field references
     private float[] rgbColor,floatProperties; //a[4],v[7]
     private static float[] floatPropertiesMin, floatPropertiesMax; //z[7],A[7]
@@ -102,11 +117,11 @@ public class GeneAccess extends Accessor{
             floatPropertiesMax = (float[]) floatPropertiesMaxFieldPointer.get(null);
 
             // Apply any patches to vanilla indices found in the queuedStaticChanges arraylist.
-            for(QueuedStaticChange<?> queuedChange : queuedChanges){
+            for(QueuedStaticChange queuedChange : queuedChanges){
                 switch (queuedChange.type()) {
-                    case INTMAX -> intPropertiesMax[queuedChange.index()] += (int) queuedChange.val();
-                    case FMIN -> floatPropertiesMin[queuedChange.index()] += (float) queuedChange.val();
-                    case FMAX -> floatPropertiesMax[queuedChange.index()] += (float) queuedChange.val();
+                    case INTMAX: intPropertiesMax[queuedChange.index()] += (int) queuedChange.val();
+                    case FMIN: floatPropertiesMin[queuedChange.index()] += (float) queuedChange.val();
+                    case FMAX: floatPropertiesMax[queuedChange.index()] += (float) queuedChange.val();
                 }
             }
 
@@ -297,28 +312,13 @@ public class GeneAccess extends Accessor{
         }
     }
 
-    public enum StaticArray{
-        INTMAX,
-        FMIN,
-        FMAX
-    }
-    /**
-     * Represents a pending modification to a static array, specifying the index at which a new value should be inserted.
-     * These modifications are collected in a list (or queue) and applied all at once during class loading to patch the vanilla static field contents.
-     *
-     * @param <T> The type of value to be inserted, subclass of {@link Number}.
-     * @param type an entry in the StaticArray enum mapped to the target static array
-     */
-    public record QueuedStaticChange<T extends Number>(int index, T val, StaticArray type) {}
-    private static ArrayList<QueuedStaticChange<?>> queuedChanges;
-
     /**
      * Schedules a patch to the provided array at the given index to be applied as {@code Gene.class} is loaded into memory
      * at {@code loadStatic()}
      * @param type The static array as an entry on the StaticArray enum
      */
     protected static <T extends Number> void patchArray(int index, T value, StaticArray type){
-        queuedChanges.add(new GeneAccess.QueuedStaticChange<Number>(index, value, type));
+        queuedChanges.add(new GeneAccess.QueuedStaticChange(index, value, type));
     }
 
 }
