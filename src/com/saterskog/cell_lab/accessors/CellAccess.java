@@ -12,7 +12,8 @@ public class CellAccess extends Accessor{
     public static int modesCount= ChimeraHooks.VANILLA_MODES_COUNT;
     public int formatVersion=ChimeraHooks.VANILLA_VERSION;
     // Cell Lab uses a double buffer (signal count*2) for (diffusion?) calculations.
-    public static int signalCount=ChimeraHooks.VANILLA_SIGNAL_COUNT, doubledSignalCount=ChimeraHooks.VANILLA_SIGNAL_COUNT*2;
+    public static int signalCount=ChimeraHooks.VANILLA_SIGNAL_COUNT, doubledSignalCount=ChimeraHooks.VANILLA_SIGNAL_COUNT*2,
+    secreteSignalStartIndex=11+signalCount-ChimeraHooks.VANILLA_SIGNAL_COUNT;
 
     public CellAccess(Object obj, ObjectInputStream stream, int vers){
         this(obj);
