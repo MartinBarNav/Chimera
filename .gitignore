@@ -2,7 +2,7 @@
 *.keystore
 pass.txt
 *.smali
-.gradle
-.idea
+.gradle/**/*
+.idea/**/*
 build/**/*
 saterskog/apk/**/*
