@@ -96,8 +96,19 @@ task deAPK(type: Exec){
 }
 
 //This should never be called alone, APK will have runtime errors if ChimeraHooks.smali isn't included inside
-task patchAPK(type: Exec){
-    commandLine 'java','-jar','./tools/patcher.jar','saterskog/apk/smali','saterskog/patch.chimera'
+task patchAPK(type: Exec) {
+    doFirst {
+        def directory = file('saterskog')
+        def chimeraFiles = directory.listFiles({ file -> file.name.endsWith('.chimera') } as FileFilter)
+
+        if (chimeraFiles) {
+            chimeraFiles.each { chimeraFile ->
+                commandLine 'java', '-jar', './tools/patcher.jar', 'saterskog/apk/smali', chimeraFile.absolutePath
+            }
+        } else {
+            throw new GradleException("No .chimera files found in ${directory.absolutePath}")
+        }
+    }
 }
 
 task APK(type: Exec){

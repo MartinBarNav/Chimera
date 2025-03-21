@@ -1,11 +1,9 @@
 package com.saterskog.cell_lab.accessors;
 
 
-import com.saterskog.cell_lab.ChimeraHooks;
-
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 
 public abstract class Accessor {
     private AndroidAccess parcel;

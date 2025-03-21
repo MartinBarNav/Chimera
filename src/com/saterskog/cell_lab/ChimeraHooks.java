@@ -51,12 +51,7 @@ public class ChimeraHooks {
 
     protected static void loadCellFromStream(Object cell, ObjectInputStream stream, int version){
         CellAccess access = new CellAccess(cell,stream,version);
-        try {
-            invokeModImplementationWithAccess("onLoadCellFromStream", access);
-        } catch (Exception e) {
-            System.err.println("Error while reading cell stream. Possible attempt to read non-existant" +
-                    " custom property?");
-        }
+        invokeModImplementationWithAccess("onLoadCellFromStream", access);
     }
 
     protected static void saveCellToStream(Object cell, ObjectOutputStream stream){
@@ -66,13 +61,7 @@ public class ChimeraHooks {
 
     protected static void loadGeneFromStream(Object gene, ObjectInputStream stream, int version){
         GeneAccess access = new GeneAccess(gene, stream, version);
-        try {
-            invokeModImplementationWithAccess("onLoadGeneFromStream", access);
-        } catch (Exception e) {
-            System.err.println("Error while reading gene stream. Possible attempt to read non-existant" +
-                    " custom property?");
-        }
-
+        invokeModImplementationWithAccess("onLoadGeneFromStream", access);
     }
 
     protected static void saveGeneToStream(Object gene, ObjectOutputStream stream){
@@ -83,17 +72,11 @@ public class ChimeraHooks {
     protected static void loadGeneFromParcel(Object gene, Object parcel){
         AndroidAccess parcelAccess = new AndroidAccess(parcel, AndroidAccess.Type.PARCEL);
         GeneAccess access =  new GeneAccess(gene,parcelAccess);
-        try {
-            invokeModImplementationWithAccess("onLoadGeneFromParcel", access);
-        } catch (Exception e) {
-            System.err.println("Error while reading gene parcel. Possible attempt to read non-existant" +
-                    " custom property?");
-        }
+        invokeModImplementationWithAccess("onLoadGeneFromParcel", access);
     }
 
     protected static void saveGeneToParcel(Object gene, Object parcel){
         AndroidAccess parcelAccess = new AndroidAccess(parcel, AndroidAccess.Type.PARCEL);
-
         GeneAccess access =  new GeneAccess(gene,parcelAccess);
         invokeModImplementationWithAccess("onSaveGeneToParcel",access);
     }
