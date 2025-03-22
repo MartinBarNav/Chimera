@@ -151,7 +151,8 @@
 {com/saterskog/cell_lab/i.smali: {line: 6958, override:true, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/CellAccess;->signalCount:I'}}}
 {com/saterskog/cell_lab/i.smali: {line: 7039, override:true, patches:{'sget v2, Lcom/saterskog/cell_lab/accessors/CellAccess;->signalCount:I'}}}
 {com/saterskog/cell_lab/i.smali: {line: 7049, override:true, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/CellAccess;->signalCount:I'}}}
-{com/saterskog/cell_lab/i.smali: {line: 6963, override:true, patches:{'sget v2, Lcom/saterskog/cell_lab/accessors/CellAccess;->secreteSignalStartIndex:I'}}}
+{com/saterskog/cell_lab/i.smali: {line: 6963, override:false, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/CellAccess;->secreteSignalStartIndex:I'}}}
+{com/saterskog/cell_lab/i.smali: {line: 6963, override:true, patches:{'add-int v3, v2, v3'}}}
 
 {com/saterskog/cell_lab/i$f$a.smali: {line: 202, override:true, patches:{'sget v6, Lcom/saterskog/cell_lab/accessors/CellAccess;->signalCount:I'}}}
 
