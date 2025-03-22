@@ -16,9 +16,11 @@ public class ChimeraHooks {
     public static final int VANILLA_VERSION = 95;
     public static int modFormatVersion=VANILLA_VERSION;
     protected static boolean SandboxMode=false;
+    public static String loggerID = "ChimeraLogger: ";
 
     protected static void initMods(String[] classNames) {
         if(initialized) return;
+        System.out.println(loggerID + " main activity hook jump to initMods()");
         GeneAccess.init();
         GenomeEditorAccess.init();
 
@@ -30,9 +32,10 @@ public class ChimeraHooks {
                     cons.setAccessible(true);
                     Object mod = cons.newInstance();
                     mods.add(mod);
+                    System.out.println(loggerID +"Mod: " + "[modID or name here]" + " initialized");
                 }
             } catch (Exception e) {
-                System.err.println(e.getCause());
+                System.err.println(loggerID + e.getCause());
             }
         }
 
@@ -83,7 +86,7 @@ public class ChimeraHooks {
 
     protected static void onCreateGeditorHook(Object geditorView, ArrayList<Object> controllers, String[] modesString){
         GenomeEditorAccess access = new GenomeEditorAccess(geditorView, controllers, modesString);
-        invokeModImplementationWithAccess("onCreateGenomeEditorViewHook",access);
+        invokeModImplementationWithAccess("onCreateGenomeEditorView",access);
     }
 
     public static int getCurrentFormatVersion(){
@@ -115,7 +118,7 @@ public class ChimeraHooks {
                     // Try static implementation
                     method.invoke(args);
                 } catch (IllegalAccessException e) {
-                    System.err.println("Warning: Method: " + method.getName() + " on mod: " + mod.getClass().getName()
+                    System.err.println(loggerID+"Warning: Method: " + method.getName() + " on mod: " + mod.getClass().getName()
                             + " has valid name for hook but is inaccessible. Mod hooks must be public methods!");
                 }
             } catch (NoSuchMethodException e) {
@@ -123,7 +126,7 @@ public class ChimeraHooks {
             } catch (Exception e) {
                 unloadMod(mod);
                 e.printStackTrace();
-                System.err.print(e.getCause());
+                System.err.print(loggerID+e.getCause());
             }
         }
     }

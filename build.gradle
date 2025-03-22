@@ -4,9 +4,7 @@
 * so if you're running the APK on an emulator (as you should) you can forego the signing for the moment.
 * Not a top priority until alpha release maybe?
 *
-*/
-
-/*
+*
 * modAPK compiles both chimera and mod java files, decompiles the apk inside saterskog/cell.apk, patches it using patcher.jar in /tools/patcher.jar
 * and the patch file in saterskog/patch.chimera, then it uses d8 to convert .class mod and chimera files to classes.dex and finally baksmali to
 * obtain smali files which it then inserts into the APK at the correct locations. Not to mention the mods.txt manifest inside the /assets/ folder of the APK.
@@ -23,7 +21,7 @@ repositories {
 
 dependencies {
     configurations.maybeCreate("r8")
-    r8 "com.android.tools:r8:8.2.55"  // Correct version from R8's own repository
+    r8 "com.android.tools:r8:8.2.55"
 }
 
 // Task to compile Chimera-specific Java files
@@ -58,7 +56,7 @@ task buildMod {
     dependsOn buildAll
 }
 
-// Task to generate DEX file for mod classes Dont mind the debugging. I'm losing my mind over here.
+// Task to generate DEX file for mod classes Dont mind the debugging.
 tasks.register('getDex', Exec) {
     description 'Converts mod class files to DEX format using AGP D8'
     dependsOn buildMod
@@ -110,18 +108,27 @@ task deAPK(type: Exec){
 }
 
 //This should never be called alone, APK will have runtime errors if ChimeraHooks.smali isn't included inside
-task patchAPK(type: Exec) {
+//This must run sequentially since patches are supposed to build ontop of the previos file's worth.
+task patchAPK {
     doFirst {
         def directory = file('saterskog')
         def chimeraFiles = directory.listFiles({ file -> file.name.endsWith('.chimera') } as FileFilter)
 
-        if (chimeraFiles) {
-            chimeraFiles.each { chimeraFile ->
-                commandLine 'java', '-jar', './tools/patcher.jar', 'saterskog/apk/smali', chimeraFile.absolutePath
-            }
-        } else {
+        if (!chimeraFiles) {
             throw new GradleException("No .chimera files found in ${directory.absolutePath}")
         }
+
+        chimeraFiles.each { chimeraFile ->
+            println "Patching: ${chimeraFile.absolutePath}"
+            exec {
+                workingDir projectDir
+                commandLine 'java', '-jar', './tools/patcher.jar', 'saterskog/apk/smali', chimeraFile.absolutePath
+            }
+        }
+    }
+
+    doLast {
+        println "All patches applied."
     }
 }
 

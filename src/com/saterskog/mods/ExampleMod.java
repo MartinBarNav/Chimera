@@ -25,7 +25,7 @@ public class ExampleMod {
         ChimeraHooks.enableSandbox();
     }
 
-    public static void onCreateGenomeEditorViewHook(GenomeEditorAccess access){
+    public static void onCreateGenomeEditorView(GenomeEditorAccess access){
         GenomeEditorAccess.Slider mySlider = GenomeEditorAccess.sliderBuilder()
                 .name("My Slider")
                 .description("Test description")
