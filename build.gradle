@@ -1,14 +1,32 @@
-/*
-* For the moment, running gradle modAPK followed by gradle APK should yield a modded APK that can be signed then installed.
-* There is no automatic signing yet, I sign the APK with my own keystore. Some emulators can run unsigned APKs,
-* so if you're running the APK on an emulator (as you should) you can forego the signing for the moment.
-* Not a top priority until alpha release maybe?
+/*                                     |     Chimera Gradle Build System    |
+* -------------------------------------|     !! Development Workspace !!    |------------------------------------------
+*                                      --------------------------------------
+* Build info:
+*   - Java 17+
+*   - Gradle 8.0+
 *
+* Core tasks:
+* ~~~~~~~~~~~~~~~~~~~~
+*  Compiling Chimera:
+*  > `./gradlew buildChimera` OR `./gradlew bc` for short. <== yields ChimeraAPI.jar
+* ~~~~~~~~~~~~~~~~~~~~
+*  Compiling mods:
+*  > `./gradlew buildMod` OR `./gradlew bm` for short <== yields mods.jar
+* ~~~~~~~~~~~~~~~~~~~~
+*  Creating an APK:
+*  > `./gradlew apk` <== assumes mods.jar and ChimeraAPI.jar exist.
+* ~~~~~~~~~~~~~~~~~~~~
 *
-* modAPK compiles both chimera and mod java files, decompiles the apk inside saterskog/cell.apk, patches it using patcher.jar in /tools/patcher.jar
-* and the patch file in saterskog/patch.chimera, then it uses d8 to convert .class mod and chimera files to classes.dex and finally baksmali to
-* obtain smali files which it then inserts into the APK at the correct locations. Not to mention the mods.txt manifest inside the /assets/ folder of the APK.
-* There certainly is a more straightfoward way to convert java to smali and I will switch to that later on, but for testing purposes baksmali works well.
+* Other tasks:
+* ~~~~~~~~~~~~~~~~~~~~
+*  Cleanup:
+*  > `./gradlew cleanBuild` to get rid of the build directory.
+* ~~~~~~~~~~~~~~~~~~~~
+*  Inserting core patches:
+*  > `./gradlew patchAPK` <== done automatically when creating apk
+* ~~~~~~~~~~~~~~~~~~~~
+*
+* ------------------------------------------------------------------------------------------------------------------
 */
 
 plugins {
@@ -33,15 +51,22 @@ dependencies {
 def chimeraSources = fileTree('src/com/saterskog/cell_lab')
         .include('**/*.java')
         .collect { it.absolutePath }
+
 def modSources = fileTree('src/com/saterskog/mods')
         .include('**/*.java')
         .collect { it.absolutePath }
+
 def chimeraDir = file('chimera')
 def chimeraJar = file('chimera/api/ChimeraAPI.jar')
+def modJar = file('build/jar/mod.jar')
 def apkURL = "https://cell-lab.net/apks/cell_lab_103.apk"
+
+//Remote dependencies
+def apktoolJar = configurations.tools.files.find { it.name.contains('apktool-cli') }
+def d8Jar = configurations.tools.files.find { it.name.contains("r8") }
 //=========================================^ Global Variables ^=========================================
 
-
+// Sources jar for IDE integration
 tasks.register('buildSourceJar',Exec){
     description 'Packages API into readable source jar for IDE integration'
 
@@ -49,10 +74,16 @@ tasks.register('buildSourceJar',Exec){
     commandLine 'jar','cf','chimera/api/ChimeraSrc.jar','src/com/saterskog/cell_lab'
 }
 
-// Task to compile Chimera-specific Java files
+//Invokes remote dependencies. If not cached, gradle will download them
+tasks.register('fetchDependencies',Exec){
+    commandLine 'java', '-jar', apktoolJar, '-version'
+    commandLine 'java', '-jar', d8Jar, '--version'
+}
+
 tasks.register('compileChimera', Exec) {
     description 'Compiles Chimera Java files into build/chimera directory'
 
+    outputs.dir('build/chimera')
     file('build/chimera').mkdirs()
     // Using --release since android tends to lag behind newer jdks and using jdk 21 makes d8 throw an error due to it being too new.
     commandLine 'javac','--release','17','-d', 'build/chimera', *chimeraSources
@@ -62,11 +93,16 @@ tasks.register('buildChimera',Exec){
     dependsOn compileChimera
     file('chimera/api').mkdirs()
 
+    inputs.dir('build/chimera')
+    outputs.file(chimeraJar)
+
     commandLine 'jar','cf',chimeraJar,'-C','build/chimera','.'
 }
 
 task buildMod(type: Exec) {
     description 'Builds the mod by depending on buildAll'
+
+    outputs.dir('build/mods')
 
     file('build/mods').mkdirs()
     commandLine 'javac', '-cp', chimeraJar, '--release', '17','-d', 'build/mods', *modSources
@@ -75,8 +111,9 @@ task buildMod(type: Exec) {
 task getVanillaAPK (type: Exec){
     description "downloads a vanilla Cell Lab apk from the official website"
 
-    def file = new File("saterskog/cell.apk")
-    if(!file.exists()){
+    def apk = new File("saterskog/cell.apk")
+    outputs.file(apk)
+    if(!apk.exists()){
         commandLine 'curl',apkURL,'-o','saterskog/cell.apk'
     }
     else{
@@ -85,41 +122,49 @@ task getVanillaAPK (type: Exec){
 
 }
 
-// Task to generate DEX file for mod classes Dont mind the debugging.
-task getDex(type: Exec) {
-    description 'Converts mod class files to DEX format using D8 dependency'
+task getModJar(type: Exec){
+    description 'Creates a jar containing mod classes and chimeraAPI to be converted to smali later on by d8'
     dependsOn buildMod
 
-    def classDir = file('build/chimera/com/saterskog')
+    mkdir('build/jar')
+
+    inputs.dir('build/mods/com/saterskog/mods')
+    outputs.file(modJar)
+
+    commandLine 'jar','cf',modJar,'-C','build/mods','.'
+}
+
+// Task to generate DEX file for mod classes Dont mind the debugging.
+task getDex(type: Exec) {
+    dependsOn getModJar
+    description 'Converts mod class files to DEX format using D8 dependency'
+
     def outputDir = file('build/dex_output')
 
-    inputs.dir(classDir)
+    inputs.dir('build/chimera')
+    inputs.dir('build/mods')
     outputs.dir(outputDir)
+    outputs.file(outputDir.toString()+"/classes.dex")
 
     doFirst {
-        def d8Jar = configurations.tools.files.find { it.name.contains("r8") }
         if (d8Jar == null) {
             throw new GradleException("D8 JAR not found in dependencies. Make sure R8 is included!")
         }
-
-        def classes = fileTree(classDir).include('**/*.class').collect { it.absolutePath }
-        println "Found class files: ${classes ?: 'None'}"
-
         outputDir.mkdirs()
-        fileTree(outputDir).each { it.delete() }
 
-        if (!classes) {
-            throw new GradleException("No class files found in ${classDir.absolutePath}")
-        }
-
-        commandLine 'java', '-cp', d8Jar, 'com.android.tools.r8.D8', '--output', outputDir, *classes
+        //Run d8 and pass it ChimeraAPI.jar & mod.jar
+        commandLine 'java', '-jar', d8Jar, 'com.android.tools.r8.D8', '--output', outputDir, chimeraJar, modJar
+        //Will yield classes.dex
     }
 }
 
 // Task to disassemble DEX into Smali
 task getSmali(type: Exec) {
-    description 'Disassembles DEX file into Smali code'
     dependsOn getDex
+    description 'Disassembles DEX file into Smali code'
+
+    inputs.file('build/dex_output/classes.dex')
+    outputs.dir("build/smali")
 
     workingDir file('tools')
 
@@ -133,13 +178,13 @@ task deAPK(type: Exec){
     workingDir file('saterskog')
     mkdir("saterskog/apk")
 
-    def apktoolJar = configurations.tools.find { it.name.contains('apktool-cli') }
     commandLine 'java', '-jar', apktoolJar, 'd', 'cell.apk', '-o', './apk','-f'
 }
 
 //This should never be called alone, APK will have runtime errors if ChimeraHooks.smali isn't included inside
 //This must run sequentially since patches are supposed to build ontop of the previos file's worth.
 task patchAPK {
+    inputs.dir('saterskog/apk/smali')
     doFirst {
         def chimeraFiles = chimeraDir.listFiles({ file -> file.name.endsWith('.chimera') } as FileFilter)
 
@@ -171,6 +216,9 @@ task findModSources {
     def directory = file('src/com/saterskog/mods')
     def outputFile = file('saterskog/mods.txt')
 
+    inputs.dir('src/com/saterskog/mods')
+    outputs.file('saterskog/mods.txt')
+
     doLast {
         outputFile.parentFile.mkdirs()
         outputFile.createNewFile()
@@ -190,6 +238,8 @@ task findModSources {
 
 //This task should insert the mods.txt file inside apk/assets/ where it is expected to be.
 task insertModManifest(type: Copy) {
+    inputs.file('saterskog/apk/assets/mods.txt')
+
     from 'saterskog/mods.txt'
     into 'saterskog/apk/assets'
     doLast {
@@ -204,6 +254,10 @@ task insertModManifest(type: Copy) {
 }
 
 task insertModFiles(type: Copy) {
+    dependsOn getSmali
+
+    inputs.dir('saterskog/apk/smali/com/saterskog/mods')
+
     from 'build/smali/com/saterskog/mods'
     into 'saterskog/apk/smali/com/saterskog/mods'
 
@@ -225,6 +279,8 @@ task insertModFiles(type: Copy) {
 }
 
 task insertChimeraHooks(type: Copy) {
+    inputs.dir('build/smali/com/saterskog/cell_lab')
+
     from 'build/smali/com/saterskog/cell_lab'
     into 'saterskog/apk/smali/com/saterskog/cell_lab'
 
@@ -246,15 +302,13 @@ task insertChimeraHooks(type: Copy) {
 }
 
 task modAPK{
-    dependsOn getVanillaAPK,deAPK,patchAPK,getSmali,findModSources,insertModManifest,insertChimeraHooks,insertModFiles
+    dependsOn insertModManifest,insertChimeraHooks,insertModFiles,patchAPK
 }
 
 task APK(type: Exec){
     mustRunAfter modAPK
     mkdir("build/apk/signed")
-    commandLine 'apktool','b','saterskog/apk','-o','build/apk/mod.apk'
 
-    def apktoolJar = configurations.tools.find { it.name.contains('apktool-cli') }
     commandLine 'java', '-jar', apktoolJar, 'b', 'saterskog/apk', '-o', 'build/apk/mod.apk','-f'
 }
 
@@ -270,16 +324,17 @@ task cleanAPK(type: Delete) {
     delete 'saterskog/apk'
 }
 
-task debugJavac(type: Exec) {
-    commandLine 'javac', '-version'
-}
-
 //========================================v Gradle Task Aliases v========================================
 tasks.register('bsjar'){dependsOn buildSourceJar}
 
 tasks.register('bc'){dependsOn buildChimera}
 tasks.register('bm'){dependsOn buildMod}
 
+tasks.register('cb'){dependsOn cleanBuild}
+tasks.register('ck'){dependsOn cleanAPK}
+
+tasks.register('dk'){dependsOn deAPK}
+tasks.register('fetch'){dependsOn getVanillaAPK,fetchDependencies}
 //Pretty much does everything
 tasks.register('apk'){dependsOn modAPK,APK}
 //========================================^ Gradle Task Aliases ^========================================

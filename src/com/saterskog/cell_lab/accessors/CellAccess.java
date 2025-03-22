@@ -13,7 +13,7 @@ public class CellAccess extends Accessor{
     public int formatVersion=ChimeraHooks.VANILLA_VERSION;
     // Cell Lab uses a double buffer (signal count*2) for (diffusion?) calculations.
     public static int signalCount=ChimeraHooks.VANILLA_SIGNAL_COUNT, doubledSignalCount=ChimeraHooks.VANILLA_SIGNAL_COUNT*2,
-    secreteSignalStartIndex=11+signalCount-ChimeraHooks.VANILLA_SIGNAL_COUNT;
+    secreteSignalStartIndex=11,secretables=ChimeraHooks.VANILLA_SECRETEABLE_CHEMICALS,secreteArrayLength=secretables+doubledSignalCount;
 
     public CellAccess(Object obj, ObjectInputStream stream, int vers){
         this(obj);
@@ -31,6 +31,11 @@ public class CellAccess extends Accessor{
     }
 
     public static void loadStatic(){
+        doubledSignalCount=signalCount*2;
+        int newSignals = signalCount-ChimeraHooks.VANILLA_SIGNAL_COUNT;
+        secreteSignalStartIndex=11+newSignals; //Start index of the +S# item in secrocyte droplist.
+        secreteArrayLength=secretables+doubledSignalCount;
+
         try {
             modesFieldPointer = Class.forName("com.saterskog.cell_lab.Cell").getField("I");
         }catch (Exception e){

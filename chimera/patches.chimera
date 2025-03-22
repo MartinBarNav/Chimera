@@ -132,6 +132,7 @@
 {com/saterskog/cell_lab/Cell.smali: {line: 1268, override:false, patches:{'sget v6, Lcom/saterskog/cell_lab/accessors/CellAccess;->signalCount:I'}}}
 
 {com/saterskog/cell_lab/Gene.smali: {line: 192, override:false, patches:{'sget v5, Lcom/saterskog/cell_lab/accessors/CellAccess;->signalCount:I'}}}
+{com/saterskog/cell_lab/Gene.smali: {line: 178, override:true, patches:{'sget v2, Lcom/saterskog/cell_lab/accessors/CellAccess;->secreteArrayLength:I'}}}
 {com/saterskog/cell_lab/Gene.smali: {line: 194, override:false, patches:{'const/16 v5, 0x4'}}}
 
 {com/saterskog/cell_lab/CellWorld.smali: {line: 2031, override:true, patches:{'sget v6, Lcom/saterskog/cell_lab/accessors/CellAccess;->signalCount:I'}}}
@@ -151,6 +152,8 @@
 {com/saterskog/cell_lab/i.smali: {line: 6958, override:true, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/CellAccess;->signalCount:I'}}}
 {com/saterskog/cell_lab/i.smali: {line: 7039, override:true, patches:{'sget v2, Lcom/saterskog/cell_lab/accessors/CellAccess;->signalCount:I'}}}
 {com/saterskog/cell_lab/i.smali: {line: 7049, override:true, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/CellAccess;->signalCount:I'}}}
+{com/saterskog/cell_lab/i.smali: {line: 6937, override:false, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/CellAccess;->secretables:I'}}}
+{com/saterskog/cell_lab/i.smali: {line: 6937, override:true, patches:{'add-int v3, v2, v3'}}}
 {com/saterskog/cell_lab/i.smali: {line: 6963, override:false, patches:{'sget v3, Lcom/saterskog/cell_lab/accessors/CellAccess;->secreteSignalStartIndex:I'}}}
 {com/saterskog/cell_lab/i.smali: {line: 6963, override:true, patches:{'add-int v3, v2, v3'}}}
 
@@ -160,6 +163,12 @@
 
 {com/saterskog/cell_lab/p.smali: {line: 725, override:true, patches:{'sget v4, Lcom/saterskog/cell_lab/accessors/CellAccess;->signalCount:I'}}}
 {com/saterskog/cell_lab/p.smali: {line: 2151, override:true, patches:{'sget v7, Lcom/saterskog/cell_lab/accessors/CellAccess;->secreteSignalStartIndex:I'}}}
+{com/saterskog/cell_lab/p.smali: {line: 2196, override:true, patches:{'sget v7, Lcom/saterskog/cell_lab/accessors/CellAccess;->secretables:I'}}}
+{com/saterskog/cell_lab/p.smali: {line: 2233, override:true, patches:{'sget v5, Lcom/saterskog/cell_lab/accessors/CellAccess;->secretables:I'}}}
+{com/saterskog/cell_lab/p.smali: {line: 2234, override:false, patches:{
+            'neg-int v5,v5',
+            'add-int/lit8 v5,v5,0x1'
+}}}
 {com/saterskog/cell_lab/p.smali: {line: 2200, override:true, patches:{'sget v7, Lcom/saterskog/cell_lab/accessors/CellAccess;->secreteSignalStartIndex:I'}}}
 {com/saterskog/cell_lab/p.smali: {line: 2234, override:false, patches:{
             'sget v8, Lcom/saterskog/cell_lab/accessors/CellAccess;->signalCount:I',

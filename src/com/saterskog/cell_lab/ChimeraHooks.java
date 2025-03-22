@@ -12,8 +12,8 @@ import java.util.List;
 public class ChimeraHooks {
     private static final List<Object> mods = new ArrayList<>();
     private static boolean initialized=false;
-    public static final int VANILLA_FPROPERTY_COUNT=7,VANILLA_IPROPERTY_COUNT=11,VANILLA_MODES_COUNT=40,VANILLA_SIGNAL_COUNT=4; //vanilla value
-    public static final int VANILLA_VERSION = 95;
+    public static final int VANILLA_FPROPERTY_COUNT=7,VANILLA_IPROPERTY_COUNT=11,VANILLA_MODES_COUNT=40,VANILLA_SIGNAL_COUNT=4,
+            VANILLA_VERSION = 95, VANILLA_SECRETEABLE_CHEMICALS=7;
     public static int modFormatVersion=VANILLA_VERSION;
     protected static boolean SandboxMode=false;
     public static String loggerID = "ChimeraLogger: ";
