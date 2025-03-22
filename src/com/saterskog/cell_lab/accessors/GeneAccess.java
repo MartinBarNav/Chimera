@@ -94,6 +94,7 @@ public class GeneAccess extends Accessor{
     public static void init(){
         modFloatProperties = new ArrayList<>();
         modIntProperties = new ArrayList<>();
+        queuedChanges = new ArrayList<QueuedStaticChange>();
     }
 
     /**
