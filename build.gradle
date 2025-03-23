@@ -36,14 +36,11 @@ plugins {
 repositories {
     google()
     mavenCentral()
-    maven {
-        url 'https://storage.googleapis.com/r8-releases/raw'
-    }
 }
 
 dependencies {
     configurations.maybeCreate("tools")
-    tools "com.android.tools:r8:8.2.55"
+    tools "com.android.tools:r8:8.7.18"
     tools "org.apktool:apktool-cli:2.11.1"
 }
 
@@ -62,8 +59,8 @@ def modJar = file('build/jar/mod.jar')
 def apkURL = "https://cell-lab.net/apks/cell_lab_103.apk"
 
 //Remote dependencies
-def apktoolJar = configurations.tools.files.find { it.name.contains('apktool-cli') }
-def d8Jar = configurations.tools.files.find { it.name.contains("r8") }
+def apktoolJar = configurations.tools.files.find { it.name.contains('apktool-cli')}
+def r8Jar = configurations.tools.files.find { it.name.contains('r8') && it.name.endsWith(".jar") }
 //=========================================^ Global Variables ^=========================================
 
 // Sources jar for IDE integration
@@ -77,7 +74,7 @@ tasks.register('buildSourceJar',Exec){
 //Invokes remote dependencies. If not cached, gradle will download them
 tasks.register('fetchDependencies',Exec){
     commandLine 'java', '-jar', apktoolJar, '-version'
-    commandLine 'java', '-jar', d8Jar, '--version'
+    commandLine 'java', '-jar', r8Jar, '--version'
 }
 
 tasks.register('compileChimera', Exec) {
@@ -147,13 +144,16 @@ task getDex(type: Exec) {
     outputs.file(outputDir.toString()+"/classes.dex")
 
     doFirst {
-        if (d8Jar == null) {
+        if (r8Jar == null) {
             throw new GradleException("D8 JAR not found in dependencies. Make sure R8 is included!")
         }
         outputDir.mkdirs()
 
+        //Since we are running using -cp and not -jar, we need to pass it an entry point class as a fully qualified class name.
+        def d8class = 'com.android.tools.r8.D8'
+
         //Run d8 and pass it ChimeraAPI.jar & mod.jar
-        commandLine 'java', '-jar', d8Jar, 'com.android.tools.r8.D8', '--output', outputDir, chimeraJar, modJar
+        commandLine 'java', '-cp', r8Jar, d8class,chimeraJar, modJar, '--output', outputDir
         //Will yield classes.dex
     }
 }
@@ -168,6 +168,10 @@ task getSmali(type: Exec) {
 
     workingDir file('tools')
 
+    // I'm not dealing with baksmali dependencies. I'll just ship with local installation
+    // I couldn't find a CLI version anyways in the maven repository. There's only library jars
+    // and those don't have clear entry points. I'm sure there's some hacky workaround with
+    // classpaths but I am not bothering with it.
     commandLine 'java', '-jar', 'baksmali-2.5.2.jar', 'd',
             '../build/dex_output/classes.dex', '-o', '../build/smali'
 }
@@ -181,30 +185,6 @@ task deAPK(type: Exec){
     commandLine 'java', '-jar', apktoolJar, 'd', 'cell.apk', '-o', './apk','-f'
 }
 
-//This should never be called alone, APK will have runtime errors if ChimeraHooks.smali isn't included inside
-//This must run sequentially since patches are supposed to build ontop of the previos file's worth.
-task patchAPK {
-    inputs.dir('saterskog/apk/smali')
-    doFirst {
-        def chimeraFiles = chimeraDir.listFiles({ file -> file.name.endsWith('.chimera') } as FileFilter)
-
-        if (!chimeraFiles) {
-            throw new GradleException("No .chimera files found in ${chimeraDir.absolutePath}")
-        }
-
-        chimeraFiles.each { chimeraFile ->
-            println "Patching: ${chimeraFile.absolutePath}"
-            exec {
-                workingDir projectDir
-                commandLine 'java', '-jar', './tools/patcher.jar', 'saterskog/apk/smali', chimeraFile.absolutePath
-            }
-        }
-    }
-
-    doLast {
-        println "All patches applied."
-    }
-}
 
 // This will find source files (.java) for mods in com/saterskog/mods and add them to mods.txt
 // Do note that only classes annotated @ChimeraMod will be loaded as mods.
@@ -238,7 +218,7 @@ task findModSources {
 
 //This task should insert the mods.txt file inside apk/assets/ where it is expected to be.
 task insertModManifest(type: Copy) {
-    inputs.file('saterskog/apk/assets/mods.txt')
+    outputs.file('saterskog/apk/assets/mods.txt')
 
     from 'saterskog/mods.txt'
     into 'saterskog/apk/assets'
@@ -256,10 +236,12 @@ task insertModManifest(type: Copy) {
 task insertModFiles(type: Copy) {
     dependsOn getSmali
 
-    inputs.dir('saterskog/apk/smali/com/saterskog/mods')
+    def dir = "saterskog/apk/smali/com/saterskog/mods"
+    mkdir(dir)
+    outputs.dir(dir)
 
     from 'build/smali/com/saterskog/mods'
-    into 'saterskog/apk/smali/com/saterskog/mods'
+    into dir
 
     doFirst {
         def sourceDir = file('build/smali/com/saterskog/mods')
@@ -279,6 +261,8 @@ task insertModFiles(type: Copy) {
 }
 
 task insertChimeraHooks(type: Copy) {
+    dependsOn getSmali
+
     inputs.dir('build/smali/com/saterskog/cell_lab')
 
     from 'build/smali/com/saterskog/cell_lab'
@@ -298,6 +282,31 @@ task insertChimeraHooks(type: Copy) {
             println "Inserted Chimera core files"
         }
         println "Chimera core files successfully bundled in APK"
+    }
+}
+
+//This should never be called alone, APK will have runtime errors if ChimeraHooks.smali isn't included inside
+//This must run sequentially since patches are supposed to build ontop of the previos file's worth.
+task patchAPK {
+
+    doFirst {
+        def chimeraFiles = chimeraDir.listFiles({ file -> file.name.endsWith('.chimera') } as FileFilter)
+
+        if (!chimeraFiles) {
+            throw new GradleException("No .chimera files found in ${chimeraDir.absolutePath}")
+        }
+
+        chimeraFiles.each { chimeraFile ->
+            println "Patching: ${chimeraFile.absolutePath}"
+            exec {
+                workingDir projectDir
+                commandLine 'java', '-jar', './tools/patcher.jar', 'saterskog/apk/smali', chimeraFile.absolutePath
+            }
+        }
+    }
+
+    doLast {
+        println "All patches applied."
     }
 }
 

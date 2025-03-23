@@ -5,4 +5,5 @@ pass.txt
 .gradle/**/*
 .idea/**/*
 build/**/*
+chimera/api/**/*
 saterskog/apk/**/*
