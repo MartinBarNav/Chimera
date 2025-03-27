@@ -26,7 +26,7 @@
 *  > `./gradlew patchAPK` <== done automatically when creating apk
 * ~~~~~~~~~~~~~~~~~~~~
 *
-* ------------------------------------------------------------------------------------------------------------------
+* ---------------------------------------------------------------------------------------------------------------------
 */
 
 plugins {
@@ -38,10 +38,15 @@ repositories {
     mavenCentral()
 }
 
+
 dependencies {
     configurations.maybeCreate("tools")
     tools "com.android.tools:r8:8.7.18"
     tools "org.apktool:apktool-cli:2.11.1"
+
+    // If you are working with IDEA, make sure to sync the gradle project
+    configurations.maybeCreate("libraries")
+    libraries "net.bytebuddy:byte-buddy:1.17.4"
 }
 
 //=========================================v Global Variables v=========================================
@@ -62,6 +67,12 @@ def apkURL = "https://cell-lab.net/apks/cell_lab_103.apk"
 def apktoolJar = configurations.tools.files.find { it.name.contains('apktool-cli')}
 def r8Jar = configurations.tools.files.find { it.name.contains('r8') && it.name.endsWith(".jar") }
 //=========================================^ Global Variables ^=========================================
+
+
+//=========================================v Build configurations v=========================================
+//pkg = project.findProperty("pkg") ?: "chimera"
+//pkg = project.findProperty("apkname") ?: "cell_lab_chimera"
+//=========================================^ Build configurations ^=========================================
 
 // Sources jar for IDE integration
 tasks.register('buildSourceJar',Exec){
@@ -178,11 +189,38 @@ task getSmali(type: Exec) {
 
 //I made it work with remote apktool dependency rather than my local installation.
 task deAPK(type: Exec){
-    mustRunAfter getVanillaAPK
+    dependsOn getVanillaAPK
+
     workingDir file('saterskog')
     mkdir("saterskog/apk")
 
     commandLine 'java', '-jar', apktoolJar, 'd', 'cell.apk', '-o', './apk','-f'
+}
+
+//This should never be called alone, APK will have runtime errors if ChimeraHooks.smali isn't included inside
+//This must run sequentially since patches are supposed to build ontop of the previos file's worth.
+task patchAPK {
+    dependsOn deAPK
+
+    doFirst {
+        def chimeraFiles = chimeraDir.listFiles({ file -> file.name.endsWith('.chimera') } as FileFilter)
+
+        if (!chimeraFiles) {
+            throw new GradleException("No .chimera files found in ${chimeraDir.absolutePath}")
+        }
+
+        chimeraFiles.each { chimeraFile ->
+            println "Patching: ${chimeraFile.absolutePath}"
+            exec {
+                workingDir projectDir
+                commandLine 'java', '-jar', './tools/patcher.jar', 'saterskog/apk/smali', chimeraFile.absolutePath
+            }
+        }
+    }
+
+    doLast {
+        println "All patches applied."
+    }
 }
 
 
@@ -214,10 +252,13 @@ task findModSources {
             }
         }
     }
+
 }
 
 //This task should insert the mods.txt file inside apk/assets/ where it is expected to be.
 task insertModManifest(type: Copy) {
+    mustRunAfter patchAPK
+
     outputs.file('saterskog/apk/assets/mods.txt')
 
     from 'saterskog/mods.txt'
@@ -235,6 +276,7 @@ task insertModManifest(type: Copy) {
 
 task insertModFiles(type: Copy) {
     dependsOn getSmali
+    mustRunAfter patchAPK
 
     def dir = "saterskog/apk/smali/com/saterskog/mods"
     mkdir(dir)
@@ -262,6 +304,7 @@ task insertModFiles(type: Copy) {
 
 task insertChimeraHooks(type: Copy) {
     dependsOn getSmali
+    mustRunAfter patchAPK
 
     inputs.dir('build/smali/com/saterskog/cell_lab')
 
@@ -285,33 +328,21 @@ task insertChimeraHooks(type: Copy) {
     }
 }
 
-//This should never be called alone, APK will have runtime errors if ChimeraHooks.smali isn't included inside
-//This must run sequentially since patches are supposed to build ontop of the previos file's worth.
-task patchAPK {
+task configApkTool{
+    mustRunAfter patchAPK
 
-    doFirst {
-        def chimeraFiles = chimeraDir.listFiles({ file -> file.name.endsWith('.chimera') } as FileFilter)
-
-        if (!chimeraFiles) {
-            throw new GradleException("No .chimera files found in ${chimeraDir.absolutePath}")
-        }
-
-        chimeraFiles.each { chimeraFile ->
-            println "Patching: ${chimeraFile.absolutePath}"
-            exec {
-                workingDir projectDir
-                commandLine 'java', '-jar', './tools/patcher.jar', 'saterskog/apk/smali', chimeraFile.absolutePath
-            }
-        }
-    }
+    def inputFile = file("saterskog/apktool.yml")
+    def outputFile = file("saterskog/apk/apktool.yml")
 
     doLast {
-        println "All patches applied."
+        //def content = inputFile.text.replace("\${package}", "com."+project.pkg+".cell_lab").
+                //replace("\${apkname}",project.apkname+".apk")
+        outputFile.text = content
     }
 }
 
 task modAPK{
-    dependsOn insertModManifest,insertChimeraHooks,insertModFiles,patchAPK
+    dependsOn patchAPK,insertModManifest,insertChimeraHooks,insertModFiles,configApkTool
 }
 
 task APK(type: Exec){

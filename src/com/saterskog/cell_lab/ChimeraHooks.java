@@ -13,29 +13,42 @@ public class ChimeraHooks {
     private static final List<Object> mods = new ArrayList<>();
     private static boolean initialized=false;
     public static final int VANILLA_FPROPERTY_COUNT=7,VANILLA_IPROPERTY_COUNT=11,VANILLA_MODES_COUNT=40,VANILLA_SIGNAL_COUNT=4,
-            VANILLA_VERSION = 95, VANILLA_SECRETEABLE_CHEMICALS=7;
-    public static int modFormatVersion=VANILLA_VERSION;
+    VANILLA_VERSION = 95, VANILLA_SECRETEABLE_CHEMICALS=7;
+    protected static int modFormatVersion=VANILLA_VERSION;
     protected static boolean SandboxMode=false;
-    public static String loggerID = "ChimeraLogger: ";
 
-    protected static void initMods(String[] classNames) {
+    private static String[] modsTxt;
+
+    protected static void readModsFile(Object appActivity){
+        modsTxt = AndroidAccess.readAssetTextFile(appActivity,"mods.txt");
+    }
+
+    protected static void initMods(Object appActivity) {
         if(initialized) return;
-        System.out.println(loggerID + " main activity hook jump to initMods()");
+
+        Chimera.logMessage("reading assets/mods.txt to fetch mod classes...");
+        readModsFile(appActivity);
+
+        if(modsTxt.length == 0){
+            Chimera.logMessage("did not find any mods!");
+            return;
+        }
+        Chimera.logMessage("initializing accessors...");
         GeneAccess.init();
         GenomeEditorAccess.init();
 
-        for (String className : classNames) {
+        for (String className : modsTxt) {
             try {
-                Class<?> clazz = Class.forName(className);
-                if (clazz.isAnnotationPresent(ChimeraMod.class)) {
-                    Constructor<?> cons = clazz.getDeclaredConstructor();
+                Class<?> modClass = Class.forName(className);
+                if (modClass.isAnnotationPresent(ChimeraMod.class)) {
+                    Constructor<?> cons = modClass.getDeclaredConstructor();
                     cons.setAccessible(true);
                     Object mod = cons.newInstance();
                     mods.add(mod);
-                    System.out.println(loggerID +"Mod: " + "[modID or name here]" + " initialized");
+                    Chimera.logMessage("Mod: [" + modClass.getName() + "] initialized");
                 }
             } catch (Exception e) {
-                System.err.println(loggerID + e.getCause());
+                Chimera.logError(e.getCause().getMessage());
             }
         }
 
@@ -93,6 +106,10 @@ public class ChimeraHooks {
         return modFormatVersion;
     }
 
+    public static void updateFormatVersion(){
+        modFormatVersion++;
+    }
+
     // Reflection utilities
     private static void invokeModImplementation(String methodName, Object... args) {
         Class<?>[] paramTypes = new Class[args.length];
@@ -118,7 +135,7 @@ public class ChimeraHooks {
                     // Try static implementation
                     method.invoke(args);
                 } catch (IllegalAccessException e) {
-                    System.err.println(loggerID+"Warning: Method: " + method.getName() + " on mod: " + mod.getClass().getName()
+                    Chimera.logMessage("Warning: Method: " + method.getName() + " on mod: " + mod.getClass().getName()
                             + " has valid name for hook but is inaccessible. Mod hooks must be public methods!");
                 }
             } catch (NoSuchMethodException e) {
@@ -126,7 +143,7 @@ public class ChimeraHooks {
             } catch (Exception e) {
                 unloadMod(mod);
                 e.printStackTrace();
-                System.err.print(loggerID+e.getCause());
+                Chimera.logError(e.getCause().getMessage());
             }
         }
     }

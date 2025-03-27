@@ -1,0 +1,24 @@
+version: 2.11.1
+apkFileName: ${apkname}
+isFrameworkApk: false
+usesFramework:
+  ids:
+  - 1
+  tag: null
+sdkInfo:
+  minSdkVersion: 1
+  targetSdkVersion: 1
+packageInfo:
+  forcedPackageId: 127
+  renameManifestPackage: ${package}
+versionInfo:
+  versionCode: 103
+  versionName: 103
+sharedLibrary: false
+sparseResources: false
+compactEntries: false
+doNotCompress:
+- arsc
+- mp3
+- png
+- wav

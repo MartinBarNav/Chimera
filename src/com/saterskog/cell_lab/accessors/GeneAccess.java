@@ -229,7 +229,7 @@ public class GeneAccess extends Accessor{
             intPropertiesCount += amount;
         }
 
-        ChimeraHooks.modFormatVersion++;
+        ChimeraHooks.updateFormatVersion();
 
         return properties;
     }

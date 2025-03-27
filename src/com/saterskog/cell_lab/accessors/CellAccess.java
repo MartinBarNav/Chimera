@@ -61,7 +61,7 @@ public class CellAccess extends Accessor{
             modesCount++;
         }
 
-        ChimeraHooks.modFormatVersion++;
+        ChimeraHooks.updateFormatVersion();
         return extraModes;
     }
 

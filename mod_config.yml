@@ -1,0 +1,6 @@
+modInfo:
+  id: example_mod
+  name: Example Mod
+  author: barnavm
+  modVersion: "1.0 alpha"
+  apkName: cell_lab_exampleMod.apk
