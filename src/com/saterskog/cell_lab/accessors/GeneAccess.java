@@ -1,7 +1,8 @@
 package com.saterskog.cell_lab.accessors;
 
+import com.saterskog.cell_lab.Chimera;
 import com.saterskog.cell_lab.ChimeraHooks;
-import com.saterskog.cell_lab.ChimeraMod;
+import com.saterskog.cell_lab.ModMain;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -11,12 +12,52 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 
 public class GeneAccess extends Accessor{
-    private float[] rgbColor,floatProperties;
-    private int[] intProperties;
     public static int fPropertiesCount=ChimeraHooks.VANILLA_FPROPERTY_COUNT,intPropertiesCount=ChimeraHooks.VANILLA_IPROPERTY_COUNT;
-    private static ArrayList<GeneProperty<Float>> modFloatProperties;
-    private static ArrayList<GeneProperty<Integer>> modIntProperties;
+    private static final ArrayList<GeneProperty<Float>> modFloatProperties = new ArrayList<>();;
+    private static final ArrayList<GeneProperty<Integer>> modIntProperties = new ArrayList<>();;
     private int formatVersion;
+
+    public enum StaticArray{
+        INTMAX,
+        FMIN,
+        FMAX
+    }
+    /**
+     * Represents a pending modification to a static array, specifying the index at which a new value should be inserted.
+     * These modifications are collected in a list (or queue) and applied all at once during class loading to patch the vanilla static field contents.
+     *
+     * @param val The type of value to be inserted, subclass of {@link Number}.
+     * @param type an entry in the StaticArray enum mapped to the target static array
+     */
+    public record QueuedStaticChange(int index, Number val, StaticArray type) {}
+    private static ArrayList<QueuedStaticChange> queuedChanges = new ArrayList<>();;
+
+    //Cell lab field references
+    private float[] rgbColor,floatProperties; //a[4],v[7]
+    private static float[] floatPropertiesMin, floatPropertiesMax; //z[7],A[7]
+    /* Vanilla indices (float properties):
+     *  0 = sense output type
+     *  1 = red (smell)
+     *  2 = green (smell)
+     *  3 = blue (smell)
+     *  4 = color sense threshold
+     *  5 = adhesin length
+     *  6 = Cytoskeleton
+     * */
+
+    private int[] intProperties;//u[11]
+    private static int[] intPropertiesMax; //w[11]
+    /* Vanilla indices:
+     *  0 = virus copy from (mode number)
+     *  1 = gamete compatibility (mode number)
+     *  2 = sense output signal type (0-3 [s1,s2,s3,s4])
+     *  3 = sense type (walls, food, etc...)
+     *  4 = secretion type (in the order seen in secretion droplist)
+     *  5-8 = Channel 1-4 signal types (0-3)
+     *  9 = max connections (20 by default)
+     *  10 = Telomeres
+     * */
+
 
     public GeneAccess(Object gene, AndroidAccess parcel) throws RuntimeException {
         this(gene);
@@ -50,33 +91,45 @@ public class GeneAccess extends Accessor{
         }
     }
 
-
-    public static void init(){
-        modFloatProperties = new ArrayList<>();
-        modIntProperties = new ArrayList<>();
-    }
-
-    // This method should only be called after all the mods have been initialized and thus had time to call
-    // requestAdditionalGeneFloatProperties(). Only then can we load the gene class.
-    // called from: ChimeraHooks.initMods() after all mod constructors were invoked.
+    /**
+     * Loads and (potentially) modifies static fields related to gene properties.
+     * <p>
+     * It is crucial that the {@code Gene} class is not loaded prior to this method's execution,
+     * as its static block would initialize array properties to their default sizes,
+     * and since they are final fields, the sizes of the arrays cannot be changed later.
+     * </p>
+     * @throws RuntimeException if reflection-based field access fails.
+     */
     public static void loadStatic(){
-        //It's important to NOT load the Gene class before this, otherwise the static block will run and fPropertiesCount will be 8 (the default)
-        //and since the fields are final, it cannot be changed later.
+
         try {
             Field floatPropertiesMaxFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("A");
             Field floatPropertiesMinFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("z");
             Field intPropertiesMaxFieldPointer = Class.forName("com.saterskog.cell_lab.Gene").getField("w");
 
+            intPropertiesMax = (int[]) intPropertiesMaxFieldPointer.get(null);
+            floatPropertiesMin = (float[]) floatPropertiesMinFieldPointer.get(null);
+            floatPropertiesMax = (float[]) floatPropertiesMaxFieldPointer.get(null);
+
+            // Apply any patches to vanilla indices found in the queuedStaticChanges arraylist.
+            for(QueuedStaticChange queuedChange : queuedChanges){
+                switch (queuedChange.type()) {
+                    case INTMAX: intPropertiesMax[queuedChange.index()] += (int) queuedChange.val();
+                    case FMIN: floatPropertiesMin[queuedChange.index()] += (float) queuedChange.val();
+                    case FMAX: floatPropertiesMax[queuedChange.index()] += (float) queuedChange.val();
+                }
+            }
+
             int j = 0;
             for (int i = ChimeraHooks.VANILLA_FPROPERTY_COUNT; i < fPropertiesCount; i++) {
-                ((float[]) floatPropertiesMaxFieldPointer.get(null))[i] = modFloatProperties.get(j).getMaximumValue();
-                ((float[]) floatPropertiesMinFieldPointer.get(null))[i] = modFloatProperties.get(j).getMinimumValue();
+                floatPropertiesMax[i] = modFloatProperties.get(j).getMaximumValue();
+                floatPropertiesMin[i] = modFloatProperties.get(j).getMinimumValue();
                 j++;
             }
 
             j = 0;
             for (int i = ChimeraHooks.VANILLA_IPROPERTY_COUNT; i < intPropertiesCount; i++) {
-                ((int[]) intPropertiesMaxFieldPointer.get(null))[i] = modIntProperties.get(j).getMaximumValue();
+                intPropertiesMax[i] = modIntProperties.get(j).getMaximumValue();
                 j++;
             }
 
@@ -91,7 +144,7 @@ public class GeneAccess extends Accessor{
     }
 
     public static <T extends Number> void setMinimumValueOfProperty(GeneProperty<T> property, T value){
-        if(ChimeraHooks.isCallerInitializer(1)) {
+        if(Chimera.isCallerInitializer(1)) {
             property.setMinimumValue(value);
             if(value instanceof Float){
                 modFloatProperties.get(property.getIndex()-ChimeraHooks.VANILLA_FPROPERTY_COUNT).setMinimumValue((float) value);
@@ -111,7 +164,7 @@ public class GeneAccess extends Accessor{
     }
 
     public static <T extends Number> void setMaximumValueOfProperty(GeneProperty<T> property, T value){
-        if(ChimeraHooks.isCallerInitializer(1)) {
+        if(Chimera.isCallerInitializer(1)) {
             property.setMaximumValue(value);
             if(value instanceof Float){
                 modFloatProperties.get(property.getIndex()-ChimeraHooks.VANILLA_FPROPERTY_COUNT).setMaximumValue((float) value);
@@ -122,16 +175,27 @@ public class GeneAccess extends Accessor{
         }
     }
 
-    /** This method should only be called on mod initialization, either inside a static block or the mod constructor.
+    /**
+     * Requests additional gene properties of a specified numeric type for a mod.
+     * <p>
+     * This method allows mods to create new gene properties by allocating additional slots
+     * for either floating-point or integer properties. The request must be made during
+     * mod initialization, any later invocation will be denied due to the nature of final static fields.
+     * </p>
+     * @param amount The number of additional gene properties to allocate.
+     * @param type   The class type of the requested properties ({@code float.class} or {@code int.class}).
+     * @param mod    The mod instance requesting the additional properties.
+     * @return An array of newly allocated {@link GeneProperty} instances.
+     * @throws RuntimeException if the request is made outside mod initialization or the mod reference is invalid.
      */
     @SuppressWarnings("unchecked")
     public static <T extends Number> GeneProperty<T>[] requestAdditionalGeneProperties(int amount, Class<T> type, Object mod) {
-        if (!ChimeraHooks.isCallerInitializer(1)) {
+        if (!Chimera.isCallerInitializer(1)) {
             throw new RuntimeException("Request for additional" + type.getSimpleName().toLowerCase() +
                     "properties denied! Request must be made during mod initialization!");
         }
-        if(!mod.getClass().isAnnotationPresent(ChimeraMod.class)){
-            throw new RuntimeException("Request for additional properties denied! Invalid mod reference.");
+        if(!mod.getClass().isAnnotationPresent(ModMain.class)){
+            throw new RuntimeException("Request for additional properties denied! Must be called from main mod class!");
         }
 
         GeneProperty<T>[] properties = new GeneProperty[amount];
@@ -159,6 +223,8 @@ public class GeneAccess extends Accessor{
             intPropertiesCount += amount;
         }
 
+        Chimera.updateFormatVersion();
+
         return properties;
     }
 
@@ -172,11 +238,11 @@ public class GeneAccess extends Accessor{
         }
         for(GeneProperty<T> property : properties) {
             if(property.type == float.class) {
-                ChimeraHooks.invokeMethod(this.getParcel().getObjectReference(), "writeFloat", new Class[]{float.class},
+                Chimera.invokeMethod(this.getParcel().getObjectReference(), "writeFloat", new Class[]{float.class},
                         this.floatProperties[property.getIndex()]);
             }
             else if(property.type == int.class){
-                ChimeraHooks.invokeMethod(this.getParcel().getObjectReference(), "writeInt", new Class[]{int.class},
+                Chimera.invokeMethod(this.getParcel().getObjectReference(), "writeInt", new Class[]{int.class},
                         this.intProperties[property.getIndex()]);
             }
         }
@@ -190,10 +256,10 @@ public class GeneAccess extends Accessor{
         }
         for(GeneProperty<T> property : properties) {
             if (property.type== float.class) {
-                this.floatProperties[property.getIndex()] = (float) ChimeraHooks.invokeMethodNoParams(this.getParcel().getObjectReference(), "readFloat");
+                this.floatProperties[property.getIndex()] = (float) Chimera.invokeMethodNoParams(this.getParcel().getObjectReference(), "readFloat");
             }
             else if(property.type == int.class){
-                this.intProperties[property.getIndex()] = (int) ChimeraHooks.invokeMethodNoParams(this.getParcel().getObjectReference(), "readInt");
+                this.intProperties[property.getIndex()] = (int) Chimera.invokeMethodNoParams(this.getParcel().getObjectReference(), "readInt");
             }
         }
     }
@@ -207,11 +273,11 @@ public class GeneAccess extends Accessor{
 
         for(GeneProperty<T> property : properties){
             if(property.type == float.class) {
-                ChimeraHooks.invokeMethod(this.getOutStream(), "writeFloat", new Class[]{float.class},
+                Chimera.invokeMethod(this.getOutStream(), "writeFloat", new Class[]{float.class},
                         this.floatProperties[property.getIndex()]);
             }
             else if(property.type == int.class){
-                ChimeraHooks.invokeMethod(this.getOutStream(), "writeInt", new Class[]{int.class},
+                Chimera.invokeMethod(this.getOutStream(), "writeInt", new Class[]{int.class},
                         this.intProperties[property.getIndex()]);
             }
         }
@@ -240,4 +306,14 @@ public class GeneAccess extends Accessor{
             }
         }
     }
+
+    /**
+     * Schedules a patch to the provided array at the given index to be applied as {@code Gene.class} is loaded into memory
+     * at {@code loadStatic()}
+     * @param type The static array as an entry on the StaticArray enum
+     */
+    protected static <T extends Number> void patchArray(int index, T value, StaticArray type){
+        queuedChanges.add(new GeneAccess.QueuedStaticChange(index, value, type));
+    }
+
 }

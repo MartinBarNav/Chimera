@@ -1,11 +1,9 @@
 package com.saterskog.cell_lab.accessors;
 
 
-import com.saterskog.cell_lab.ChimeraHooks;
-
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
 
 public abstract class Accessor {
     private AndroidAccess parcel;
@@ -49,29 +47,6 @@ public abstract class Accessor {
 
     protected ObjectInputStream getInStream(){
         return this.inStream;
-    }
-
-    public void closeInStream(){
-        try {
-            this.inStream.close();
-            this.inStream = null;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void closeOutStream(){
-        try {
-            this.outStream.close();
-            this.outStream = null;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public void closeParcel(){
-        ChimeraHooks.invokeMethodNoParams(this.parcel,"recycle");
-        this.parcel = null;
     }
 
 }

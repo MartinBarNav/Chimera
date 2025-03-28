@@ -2,5 +2,8 @@
 *.keystore
 pass.txt
 *.smali
+.gradle/**/*
+.idea/**/*
 build/**/*
+chimera/api/**/*
 saterskog/apk/**/*
