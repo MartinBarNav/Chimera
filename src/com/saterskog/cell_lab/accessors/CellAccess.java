@@ -1,7 +1,8 @@
 package com.saterskog.cell_lab.accessors;
 
+import com.saterskog.cell_lab.Chimera;
 import com.saterskog.cell_lab.ChimeraHooks;
-import com.saterskog.cell_lab.ChimeraMod;
+import com.saterskog.cell_lab.ModMain;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -46,12 +47,12 @@ public class CellAccess extends Accessor{
     public int getFormatVersion(){return this.formatVersion;}
 
     public static CellProperty[] requestAdditionalModes(int amount, Object mod){
-        if (!ChimeraHooks.isCallerInitializer(1)){
+        if (!Chimera.isCallerInitializer(1)){
             throw new RuntimeException("Request for additional cell modes denied!"
                     + " Request must be made during mod initialization!");
         }
-        if(!mod.getClass().isAnnotationPresent(ChimeraMod.class)){
-            throw new RuntimeException("Request for additional cell modes denied! Invalid mod reference.");
+        if(!mod.getClass().isAnnotationPresent(ModMain.class)){
+            throw new RuntimeException("Request for additional cell modes denied! Must be called from main mod class!");
         }
 
         CellProperty[] extraModes = new CellProperty[amount];
@@ -61,7 +62,7 @@ public class CellAccess extends Accessor{
             modesCount++;
         }
 
-        ChimeraHooks.updateFormatVersion();
+        Chimera.updateFormatVersion();
         return extraModes;
     }
 

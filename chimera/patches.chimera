@@ -64,7 +64,7 @@
 {com/saterskog/cell_lab/Cell.smali: {line: 2243, override:false, patches:{'invoke-static {p0, p1}, Lcom/saterskog/cell_lab/ChimeraHooks;->saveCellToStream(Ljava/lang/Object;Ljava/io/ObjectOutputStream;)V'}}}
 
 {com/saterskog/cell_lab/i.smali: {line: 6290, override:false, patches:{
-            'invoke-static {v0,v11,v8}, Lcom/saterskog/cell_lab/ChimeraHooks;->onCreateGeditorHook(Ljava/lang/Object;Ljava/util/ArrayList;[Ljava/lang/String;)V'
+            'invoke-static {v0,v11,v8}, Lcom/saterskog/cell_lab/ChimeraHooks;->onCreateGEditorHook(Ljava/lang/Object;Ljava/util/ArrayList;[Ljava/lang/String;)V'
 }}}
 {com/saterskog/cell_lab/i.smali: {line: 1460, override:false, patches:{
         'iget-object v0, p0, Lcom/saterskog/cell_lab/i;->a:[Lcom/saterskog/cell_lab/Gene;',

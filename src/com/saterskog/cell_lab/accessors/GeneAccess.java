@@ -1,7 +1,8 @@
 package com.saterskog.cell_lab.accessors;
 
+import com.saterskog.cell_lab.Chimera;
 import com.saterskog.cell_lab.ChimeraHooks;
-import com.saterskog.cell_lab.ChimeraMod;
+import com.saterskog.cell_lab.ModMain;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -12,8 +13,8 @@ import java.util.ArrayList;
 
 public class GeneAccess extends Accessor{
     public static int fPropertiesCount=ChimeraHooks.VANILLA_FPROPERTY_COUNT,intPropertiesCount=ChimeraHooks.VANILLA_IPROPERTY_COUNT;
-    private static ArrayList<GeneProperty<Float>> modFloatProperties;
-    private static ArrayList<GeneProperty<Integer>> modIntProperties;
+    private static final ArrayList<GeneProperty<Float>> modFloatProperties = new ArrayList<>();;
+    private static final ArrayList<GeneProperty<Integer>> modIntProperties = new ArrayList<>();;
     private int formatVersion;
 
     public enum StaticArray{
@@ -29,7 +30,7 @@ public class GeneAccess extends Accessor{
      * @param type an entry in the StaticArray enum mapped to the target static array
      */
     public record QueuedStaticChange(int index, Number val, StaticArray type) {}
-    private static ArrayList<QueuedStaticChange> queuedChanges;
+    private static ArrayList<QueuedStaticChange> queuedChanges = new ArrayList<>();;
 
     //Cell lab field references
     private float[] rgbColor,floatProperties; //a[4],v[7]
@@ -90,13 +91,6 @@ public class GeneAccess extends Accessor{
         }
     }
 
-
-    public static void init(){
-        modFloatProperties = new ArrayList<>();
-        modIntProperties = new ArrayList<>();
-        queuedChanges = new ArrayList<QueuedStaticChange>();
-    }
-
     /**
      * Loads and (potentially) modifies static fields related to gene properties.
      * <p>
@@ -150,7 +144,7 @@ public class GeneAccess extends Accessor{
     }
 
     public static <T extends Number> void setMinimumValueOfProperty(GeneProperty<T> property, T value){
-        if(ChimeraHooks.isCallerInitializer(1)) {
+        if(Chimera.isCallerInitializer(1)) {
             property.setMinimumValue(value);
             if(value instanceof Float){
                 modFloatProperties.get(property.getIndex()-ChimeraHooks.VANILLA_FPROPERTY_COUNT).setMinimumValue((float) value);
@@ -170,7 +164,7 @@ public class GeneAccess extends Accessor{
     }
 
     public static <T extends Number> void setMaximumValueOfProperty(GeneProperty<T> property, T value){
-        if(ChimeraHooks.isCallerInitializer(1)) {
+        if(Chimera.isCallerInitializer(1)) {
             property.setMaximumValue(value);
             if(value instanceof Float){
                 modFloatProperties.get(property.getIndex()-ChimeraHooks.VANILLA_FPROPERTY_COUNT).setMaximumValue((float) value);
@@ -196,12 +190,12 @@ public class GeneAccess extends Accessor{
      */
     @SuppressWarnings("unchecked")
     public static <T extends Number> GeneProperty<T>[] requestAdditionalGeneProperties(int amount, Class<T> type, Object mod) {
-        if (!ChimeraHooks.isCallerInitializer(1)) {
+        if (!Chimera.isCallerInitializer(1)) {
             throw new RuntimeException("Request for additional" + type.getSimpleName().toLowerCase() +
                     "properties denied! Request must be made during mod initialization!");
         }
-        if(!mod.getClass().isAnnotationPresent(ChimeraMod.class)){
-            throw new RuntimeException("Request for additional properties denied! Invalid mod reference.");
+        if(!mod.getClass().isAnnotationPresent(ModMain.class)){
+            throw new RuntimeException("Request for additional properties denied! Must be called from main mod class!");
         }
 
         GeneProperty<T>[] properties = new GeneProperty[amount];
@@ -229,7 +223,7 @@ public class GeneAccess extends Accessor{
             intPropertiesCount += amount;
         }
 
-        ChimeraHooks.updateFormatVersion();
+        Chimera.updateFormatVersion();
 
         return properties;
     }
@@ -244,11 +238,11 @@ public class GeneAccess extends Accessor{
         }
         for(GeneProperty<T> property : properties) {
             if(property.type == float.class) {
-                ChimeraHooks.invokeMethod(this.getParcel().getObjectReference(), "writeFloat", new Class[]{float.class},
+                Chimera.invokeMethod(this.getParcel().getObjectReference(), "writeFloat", new Class[]{float.class},
                         this.floatProperties[property.getIndex()]);
             }
             else if(property.type == int.class){
-                ChimeraHooks.invokeMethod(this.getParcel().getObjectReference(), "writeInt", new Class[]{int.class},
+                Chimera.invokeMethod(this.getParcel().getObjectReference(), "writeInt", new Class[]{int.class},
                         this.intProperties[property.getIndex()]);
             }
         }
@@ -262,10 +256,10 @@ public class GeneAccess extends Accessor{
         }
         for(GeneProperty<T> property : properties) {
             if (property.type== float.class) {
-                this.floatProperties[property.getIndex()] = (float) ChimeraHooks.invokeMethodNoParams(this.getParcel().getObjectReference(), "readFloat");
+                this.floatProperties[property.getIndex()] = (float) Chimera.invokeMethodNoParams(this.getParcel().getObjectReference(), "readFloat");
             }
             else if(property.type == int.class){
-                this.intProperties[property.getIndex()] = (int) ChimeraHooks.invokeMethodNoParams(this.getParcel().getObjectReference(), "readInt");
+                this.intProperties[property.getIndex()] = (int) Chimera.invokeMethodNoParams(this.getParcel().getObjectReference(), "readInt");
             }
         }
     }
@@ -279,11 +273,11 @@ public class GeneAccess extends Accessor{
 
         for(GeneProperty<T> property : properties){
             if(property.type == float.class) {
-                ChimeraHooks.invokeMethod(this.getOutStream(), "writeFloat", new Class[]{float.class},
+                Chimera.invokeMethod(this.getOutStream(), "writeFloat", new Class[]{float.class},
                         this.floatProperties[property.getIndex()]);
             }
             else if(property.type == int.class){
-                ChimeraHooks.invokeMethod(this.getOutStream(), "writeInt", new Class[]{int.class},
+                Chimera.invokeMethod(this.getOutStream(), "writeInt", new Class[]{int.class},
                         this.intProperties[property.getIndex()]);
             }
         }

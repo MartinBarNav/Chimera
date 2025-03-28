@@ -1,20 +1,57 @@
-/*                                     |     Chimera Gradle Build System    |
+/*
+*MartinBarNav Open Source License
+*-----------------------------------------------------------------------------
+*Copyright (c) 2025, MartinBarNav (github.com/MartinBarNav)
+*-----------------------------------------------------------------------------
+*Permission is hereby granted, free of charge, to any person obtaining a copy of this Software and associated documentation files (the “Software”),
+*to use, copy, modify, merge, publish, and distribute this Software, subject to the following conditions:
+*
+*1.  ~~ Attribution ~~
+*    All copies and substantial portions of this Software, whether modified or unmodified, must retain the following credit in documentation,
+*    source code headers, or where applicable:
+*    > “Copyright (c) 2025, MartinBarNav (github.com/MartinBarNav)”
+*
+*2.  ~~ No Re-Licensing ~~
+*    This Software and any modifications thereof must remain under the exact terms of this license
+*    Redistribution of this Software under any other license, whether open-source or proprietary, is strictly prohibited.
+*
+*3. ~~ No Commercial Use ~~
+*    This Software and any modifications thereof must not be sold or used for commercial profit.
+*    Any distribution of this Software or modifications thereof must be free of charge, and no fees may be charged beyond
+*    reasonable costs associated with media, hosting, or other necessary expenses related to distribution.
+*
+*4. ~~ Mandatory Open Source ~~
+*   Any modifications, additions, or derivative works of this Software must be made publicly available under this license.
+*   All modified versions of this Software must include the corresponding source code in an easily accessible location.
+*
+*5.  ~~ Warranty Disclaimer ~~
+*   THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+*   INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+*   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+*   CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THIS SOFTWARE OR THE USE OR OTHER DEALINGS IN THIS SOFTWARE.
+*
+*6.  ~~ Compliance ~~
+*    By using, modifying, or distributing this Software, you agree to the terms of this license.
+*
+* This license ensures that the original author, and collaborators to the Chimera Project, receive permanent credit,
+* that all modifications to this Software remain FREE and OPEN-SOURCE, and that no one can re-license and profit off this Software.
+*                                      _____________________________________
+*                                      |     Chimera Gradle Build System    |
 * -------------------------------------|     !! Development Workspace !!    |------------------------------------------
 *                                      --------------------------------------
 * Build info:
 *   - Java 17+
 *   - Gradle 8.0+
 *
+* This is a development workspace only! Obtainable at: https://github.com/MartinBarNav/Chimera
+*
 * Core tasks:
 * ~~~~~~~~~~~~~~~~~~~~
 *  Compiling Chimera:
 *  > `./gradlew buildChimera` OR `./gradlew bc` for short. <== yields ChimeraAPI.jar
 * ~~~~~~~~~~~~~~~~~~~~
-*  Compiling mods:
-*  > `./gradlew buildMod` OR `./gradlew bm` for short <== yields mods.jar
-* ~~~~~~~~~~~~~~~~~~~~
 *  Creating an APK:
-*  > `./gradlew apk` <== assumes mods.jar and ChimeraAPI.jar exist.
+*  > `./gradlew apk` <== assumes ChimeraAPI.jar exist.
 * ~~~~~~~~~~~~~~~~~~~~
 *
 * Other tasks:
@@ -43,10 +80,6 @@ dependencies {
     configurations.maybeCreate("tools")
     tools "com.android.tools:r8:8.7.18"
     tools "org.apktool:apktool-cli:2.11.1"
-
-    // If you are working with IDEA, make sure to sync the gradle project
-    configurations.maybeCreate("libraries")
-    libraries "net.bytebuddy:byte-buddy:1.17.4"
 }
 
 //=========================================v Global Variables v=========================================
@@ -54,49 +87,44 @@ def chimeraSources = fileTree('src/com/saterskog/cell_lab')
         .include('**/*.java')
         .collect { it.absolutePath }
 
-def modSources = fileTree('src/com/saterskog/mods')
-        .include('**/*.java')
-        .collect { it.absolutePath }
-
 def chimeraDir = file('chimera')
 def chimeraJar = file('chimera/api/ChimeraAPI.jar')
-def modJar = file('build/jar/mod.jar')
 def apkURL = "https://cell-lab.net/apks/cell_lab_103.apk"
 
 //Remote dependencies
 def apktoolJar = configurations.tools.files.find { it.name.contains('apktool-cli')}
 def r8Jar = configurations.tools.files.find { it.name.contains('r8') && it.name.endsWith(".jar") }
+//Since we are running using -cp and not -jar, we need to pass it an entry point class as a fully qualified class name.
+def d8class = 'com.android.tools.r8.D8'
 //=========================================^ Global Variables ^=========================================
 
-
-//=========================================v Build configurations v=========================================
-//pkg = project.findProperty("pkg") ?: "chimera"
-//pkg = project.findProperty("apkname") ?: "cell_lab_chimera"
-//=========================================^ Build configurations ^=========================================
-
 // Sources jar for IDE integration
+//ALIAS: 'bsjar'
 tasks.register('buildSourceJar',Exec){
-    description 'Packages API into readable source jar for IDE integration'
+    description 'Packages API into a source jar for IDEs'
 
     mkdir("chimera/api")
     commandLine 'jar','cf','chimera/api/ChimeraSrc.jar','src/com/saterskog/cell_lab'
 }
 
-//Invokes remote dependencies. If not cached, gradle will download them
+//Invokes remote dependencies. Use to cache dependencies.
+//ALIAS: 'fetch'
 tasks.register('fetchDependencies',Exec){
     commandLine 'java', '-jar', apktoolJar, '-version'
-    commandLine 'java', '-jar', r8Jar, '--version'
+    commandLine 'java', '-cp', r8Jar, d8class, '--version'
 }
 
 tasks.register('compileChimera', Exec) {
     description 'Compiles Chimera Java files into build/chimera directory'
 
+    inputs.dir('src/com')
     outputs.dir('build/chimera')
     file('build/chimera').mkdirs()
     // Using --release since android tends to lag behind newer jdks and using jdk 21 makes d8 throw an error due to it being too new.
     commandLine 'javac','--release','17','-d', 'build/chimera', *chimeraSources
 }
 
+//ALIAS: 'bc'
 tasks.register('buildChimera',Exec){
     dependsOn compileChimera
     file('chimera/api').mkdirs()
@@ -105,15 +133,6 @@ tasks.register('buildChimera',Exec){
     outputs.file(chimeraJar)
 
     commandLine 'jar','cf',chimeraJar,'-C','build/chimera','.'
-}
-
-task buildMod(type: Exec) {
-    description 'Builds the mod by depending on buildAll'
-
-    outputs.dir('build/mods')
-
-    file('build/mods').mkdirs()
-    commandLine 'javac', '-cp', chimeraJar, '--release', '17','-d', 'build/mods', *modSources
 }
 
 task getVanillaAPK (type: Exec){
@@ -130,27 +149,13 @@ task getVanillaAPK (type: Exec){
 
 }
 
-task getModJar(type: Exec){
-    description 'Creates a jar containing mod classes and chimeraAPI to be converted to smali later on by d8'
-    dependsOn buildMod
-
-    mkdir('build/jar')
-
-    inputs.dir('build/mods/com/saterskog/mods')
-    outputs.file(modJar)
-
-    commandLine 'jar','cf',modJar,'-C','build/mods','.'
-}
-
 // Task to generate DEX file for mod classes Dont mind the debugging.
 task getDex(type: Exec) {
-    dependsOn getModJar
-    description 'Converts mod class files to DEX format using D8 dependency'
+    description 'Converts classes to dex format using D8 dependency'
 
     def outputDir = file('build/dex_output')
 
     inputs.dir('build/chimera')
-    inputs.dir('build/mods')
     outputs.dir(outputDir)
     outputs.file(outputDir.toString()+"/classes.dex")
 
@@ -160,11 +165,8 @@ task getDex(type: Exec) {
         }
         outputDir.mkdirs()
 
-        //Since we are running using -cp and not -jar, we need to pass it an entry point class as a fully qualified class name.
-        def d8class = 'com.android.tools.r8.D8'
-
-        //Run d8 and pass it ChimeraAPI.jar & mod.jar
-        commandLine 'java', '-cp', r8Jar, d8class,chimeraJar, modJar, '--output', outputDir
+        //Run d8 and pass it ChimeraAPI.jar
+        commandLine 'java', '-cp', r8Jar, d8class, chimeraJar, '--output', outputDir
         //Will yield classes.dex
     }
 }
@@ -198,18 +200,18 @@ task deAPK(type: Exec){
 }
 
 //This should never be called alone, APK will have runtime errors if ChimeraHooks.smali isn't included inside
-//This must run sequentially since patches are supposed to build ontop of the previos file's worth.
+//This must run sequentially since patches are supposed to build on top of the previous file's worth.
 task patchAPK {
     dependsOn deAPK
 
     doFirst {
-        def chimeraFiles = chimeraDir.listFiles({ file -> file.name.endsWith('.chimera') } as FileFilter)
+        def patchFiles = chimeraDir.listFiles({ file -> file.name.endsWith('.chimera') } as FileFilter)
 
-        if (!chimeraFiles) {
-            throw new GradleException("No .chimera files found in ${chimeraDir.absolutePath}")
+        if (!patchFiles) {
+            throw new GradleException("No valid patch files found in ${chimeraDir.absolutePath}")
         }
 
-        chimeraFiles.each { chimeraFile ->
+        patchFiles.each { chimeraFile ->
             println "Patching: ${chimeraFile.absolutePath}"
             exec {
                 workingDir projectDir
@@ -223,84 +225,6 @@ task patchAPK {
     }
 }
 
-
-// This will find source files (.java) for mods in com/saterskog/mods and add them to mods.txt
-// Do note that only classes annotated @ChimeraMod will be loaded as mods.
-// There is a hacky workaround maybe using static blocks but that's some nerd shit
-//TODO: make a task that can find mod binaries (.jar?), convert to smali and also add them.
-//TODO: maybe have gradle inspect jar, retrieve classes, update mods.txt THEN convert to smali and bundle inside APK.
-//TODO: that should greatly simplify multi-mod bundling, skipping the compilation entirely for pre-compiled mods.
-task findModSources {
-    def directory = file('src/com/saterskog/mods')
-    def outputFile = file('saterskog/mods.txt')
-
-    inputs.dir('src/com/saterskog/mods')
-    outputs.file('saterskog/mods.txt')
-
-    doLast {
-        outputFile.parentFile.mkdirs()
-        outputFile.createNewFile()
-
-        outputFile.text = ""
-
-        directory.eachFileRecurse { file ->
-            if (file.name.endsWith('.java')) {
-                String fullyQualifiedName = file.path.replace(directory.path + File.separator, '')
-                        .replace(File.separator, '.').replace('.java', '')
-
-                outputFile.append('com.saterskog.mods.'+fullyQualifiedName + '\n')
-            }
-        }
-    }
-
-}
-
-//This task should insert the mods.txt file inside apk/assets/ where it is expected to be.
-task insertModManifest(type: Copy) {
-    mustRunAfter patchAPK
-
-    outputs.file('saterskog/apk/assets/mods.txt')
-
-    from 'saterskog/mods.txt'
-    into 'saterskog/apk/assets'
-    doLast {
-        if (!file('saterskog/mods.txt').exists()) {
-            throw new GradleException("Could not fetch mod manifest file!")
-        }
-        if (!file('saterskog/apk/assets').exists()) {
-            throw new GradleException("Assets folder does not exist. Make sure to decompile the apk correctly!")
-        }
-        println "Mod manifest successfully copied into assets folder"
-    }
-}
-
-task insertModFiles(type: Copy) {
-    dependsOn getSmali
-    mustRunAfter patchAPK
-
-    def dir = "saterskog/apk/smali/com/saterskog/mods"
-    mkdir(dir)
-    outputs.dir(dir)
-
-    from 'build/smali/com/saterskog/mods'
-    into dir
-
-    doFirst {
-        def sourceDir = file('build/smali/com/saterskog/mods')
-        if (!sourceDir.exists()) {
-            throw new GradleException("Could not fetch mod smali files!")
-        }
-    }
-
-    doLast {
-        def destinationDir = file('saterskog/apk/smali/com/saterskog/mods')
-        if (!destinationDir.exists()) {
-            destinationDir.mkdirs()
-            println "Created mods directory"
-        }
-        println "Mod files successfully bundled in APK"
-    }
-}
 
 task insertChimeraHooks(type: Copy) {
     dependsOn getSmali
@@ -328,21 +252,21 @@ task insertChimeraHooks(type: Copy) {
     }
 }
 
-task configApkTool{
+/*task configApkTool{
     mustRunAfter patchAPK
 
     def inputFile = file("saterskog/apktool.yml")
     def outputFile = file("saterskog/apk/apktool.yml")
 
     doLast {
-        //def content = inputFile.text.replace("\${package}", "com."+project.pkg+".cell_lab").
-                //replace("\${apkname}",project.apkname+".apk")
+        def content = inputFile.text.replace("\${package}", "com."+project.pkg+".cell_lab").
+                replace("\${apkname}",project.apkname+".apk")
         outputFile.text = content
     }
-}
+}*/
 
 task modAPK{
-    dependsOn patchAPK,insertModManifest,insertChimeraHooks,insertModFiles,configApkTool
+    dependsOn patchAPK,insertChimeraHooks
 }
 
 task APK(type: Exec){
@@ -363,12 +287,10 @@ task cleanAPK(type: Delete) {
     description 'Cleans the apk decompilation directories'
     delete 'saterskog/apk'
 }
-
 //========================================v Gradle Task Aliases v========================================
 tasks.register('bsjar'){dependsOn buildSourceJar}
 
 tasks.register('bc'){dependsOn buildChimera}
-tasks.register('bm'){dependsOn buildMod}
 
 tasks.register('cb'){dependsOn cleanBuild}
 tasks.register('ck'){dependsOn cleanAPK}
