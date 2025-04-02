@@ -1,0 +1,5 @@
+id: example_mod
+name: Example Mod
+description: A mod that showcases Chimera's functionality
+author: barnavm
+main_class: net.chimera.examplemod.ExampleMod

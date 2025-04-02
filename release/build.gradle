@@ -1,0 +1,121 @@
+/*
+*MartinBarNav Open Source License
+*-----------------------------------------------------------------------------
+*Copyright (c) 2025, MartinBarNav (github.com/MartinBarNav)
+*-----------------------------------------------------------------------------
+*Permission is hereby granted, free of charge, to any person obtaining a copy of this Software and associated documentation files (the “Software”),
+*to use, copy, modify, merge, publish, and distribute this Software, subject to the following conditions:
+*
+*1.  ~~ Attribution ~~
+*    All copies and substantial portions of this Software, whether modified or unmodified, must retain the following credit in documentation,
+*    source code headers, or where applicable:
+*    > “Copyright (c) 2025, MartinBarNav (github.com/MartinBarNav)”
+*
+*2.  ~~ No Re-Licensing ~~
+*    This Software and any modifications thereof must remain under the exact terms of this license
+*    Redistribution of this Software under any other license, whether open-source or proprietary, is strictly prohibited.
+*
+*3. ~~ No Commercial Use ~~
+*    This Software and any modifications thereof must not be sold or used for commercial profit.
+*    Any distribution of this Software or modifications thereof must be free of charge, and no fees may be charged beyond
+*    reasonable costs associated with media, hosting, or other necessary expenses related to distribution.
+*
+*4. ~~ Mandatory Open Source ~~
+*   Any modifications, additions, or derivative works of this Software must be made publicly available under this license.
+*   All modified versions of this Software must include the corresponding source code in an easily accessible location.
+*
+*5.  ~~ Warranty Disclaimer ~~
+*   THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+*   INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+*   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+*   CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THIS SOFTWARE OR THE USE OR OTHER DEALINGS IN THIS SOFTWARE.
+*
+*6.  ~~ Compliance ~~
+*    By using, modifying, or distributing this Software, you agree to the terms of this license.
+*
+* This license ensures that the original author, and collaborators to the Chimera Project, receive permanent credit,
+* that all modifications to this Software remain FREE and OPEN-SOURCE, and that no one can re-license and profit off this Software.
+*/
+
+
+plugins {
+    id 'java'
+}
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+
+dependencies {
+    configurations.maybeCreate("tools")
+    tools "com.android.tools:r8:8.7.18"
+}
+
+//=========================================v Global Variables v=========================================
+def modSrc  = fileTree('java/src')
+        .include('**/*.java')
+        .collect { it.absolutePath }
+def chimeraJar = file("api/ChimeraAPI.jar")
+//Remote dependencies
+def r8Jar = configurations.tools.files.find { it.name.contains('r8') && it.name.endsWith(".jar") }
+def d8class = 'com.android.tools.r8.D8'
+//=========================================^ Global Variables ^=========================================
+
+task compile(type: Exec) {
+    outputs.dir('build/out')
+    file('build/out').mkdirs()
+    commandLine 'javac','-cp',chimeraJar,'--release','17','-d', 'build/out', *modSrc
+}
+
+
+task getDex(type: Exec) {
+    dependsOn compile
+
+    def outputDir = file('build/dex')
+    inputs.dir('build/out')
+    outputs.dir(outputDir)
+    outputs.file(outputDir.toString()+"/classes.dex")
+
+    doFirst {
+        if (r8Jar == null) {
+            throw new GradleException("D8 JAR not found in dependencies. Make sure R8 is included!")
+        }
+        outputDir.mkdirs()
+        def classes = fileTree("build/out").include('**/*.class').collect { it.absolutePath }
+
+        //TODO: add --release and --minify flags for release and code shrinking. Rn it's in debug mode.
+        commandLine 'java', '-cp', r8Jar, d8class, '--output', outputDir, *classes
+    }
+}
+
+
+task makeModManifest(type: Copy){
+    dependsOn getDex
+    mustRunAfter getDex
+    from file("mod_config.yml")
+    into file("build/dex/")
+    rename{"mod_manifest.yml"}
+}
+
+task makeModJar(type: Zip){
+    dependsOn makeModManifest
+    mustRunAfter makeModManifest
+    from("build/dex")
+    archiveFileName = "mod.jar"
+    destinationDirectory = file("build/jar")
+}
+
+
+tasks.register('fetch',Exec){
+    commandLine 'java', '-cp', r8Jar, d8class, '--version'
+}
+
+tasks.register("cleanBuild", Delete) {
+    description 'Deletes the build directory'
+    delete 'build'
+}
+
+build.dependsOn makeModJar
+
