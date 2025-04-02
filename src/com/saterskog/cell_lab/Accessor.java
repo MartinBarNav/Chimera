@@ -1,23 +1,22 @@
-package com.saterskog.cell_lab.accessors;
+package com.saterskog.cell_lab;
 
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.ArrayList;
 
-public abstract class Accessor {
+public abstract class Accessor<T> {
     private AndroidAccess parcel;
     private ObjectOutputStream outStream;
     private ObjectInputStream inStream;
 
-    private Object objectReference; //This is a reference to the real object accessors abstract away.
+    private final T objectReference; //This is a reference to the real object being wrapped.
 
 
-    protected Accessor(Object obj){
+    protected Accessor(T obj){
         this.objectReference = obj;
     }
 
-    protected Object getObjectReference() {
+    public T getObjectReference() {
         return objectReference;
     }
 

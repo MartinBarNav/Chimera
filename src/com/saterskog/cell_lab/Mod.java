@@ -1,5 +1,9 @@
 package com.saterskog.cell_lab;
 
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,7 +15,38 @@ public class Mod{
     private final List<Class<?>> hookListeners = new ArrayList<>();
     private final Map<String,Method> hooks = new HashMap<>(); //hook name and it's associated method
 
-    public Mod(Map<String,String> manifest){
+    /*
+    * Headers only appear once per file, so it's fine to use ArrayLists even if they serialize
+    * a few more bytes than what is absolutely needed.
+    */
+    protected static class Header implements Externalizable{
+        protected ArrayList<String> necessaryMods;
+        protected int modesCount, signalCount;
+
+        // !! Externalizables need a no args constructor !!
+        public Header(){}
+
+        public Header(ArrayList<String> modIDs, int[] constants){
+            this.necessaryMods = modIDs;
+            this.modesCount = constants[0];
+            this.signalCount = constants[1];
+        }
+        @Override
+        public void writeExternal(ObjectOutput objectOutput) throws IOException {
+            objectOutput.writeObject(this.necessaryMods);
+            objectOutput.writeInt(modesCount);
+            objectOutput.writeInt(signalCount);
+        }
+        @Override
+        @SuppressWarnings("unchecked")
+        public void readExternal(ObjectInput objectInput) throws IOException, ClassNotFoundException {
+            this.necessaryMods = (ArrayList<String>) objectInput.readObject();
+            this.modesCount = objectInput.readInt();
+            this.signalCount = objectInput.readInt();
+        }
+    }
+
+    protected Mod(Map<String,String> manifest){
         this.info = manifest;
     }
 

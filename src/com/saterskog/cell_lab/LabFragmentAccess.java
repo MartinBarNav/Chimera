@@ -1,26 +1,53 @@
-package com.saterskog.cell_lab.accessors;
+package com.saterskog.cell_lab;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 
-public class GenomeEditorAccess extends Accessor{
-    private final ArrayList<Object> controllers; // This is an arraylist of controllers such as seekbars and droplists, of type <com.saterskog.cell_lab.i>
-    private static Class<?> ExtraSeekBarClass,GenomeEditorViewClass,CellTypesClass,DroplistClass;
+public class LabFragmentAccess extends Accessor<Object>{
+    private ArrayList<Object> controllers; // This is an arraylist of controllers such as seekbars and droplists
+    protected static Class<?> ExtraSeekBarClass, LabFragmentClass,CellTypesClass,DroplistClass;
+    protected static Field genesArray, genomeName;
     private static String[] modesPrefix;
 
-    public GenomeEditorAccess(Object genomeEditorView, ArrayList<Object> controllersList, String[] modesString){
-        super(genomeEditorView); //this object is a reference to <com.saterskog.cell_lab.i>
+    public enum View{
+        BUTTON_LOAD_GENOME(2131230743),
+        BUTTON_SAVE_GENOME(2131230747);
+        private int id;
+        View(int val){
+            this.id=val;
+        }
+
+        public int getID(){
+            return this.id;
+        }
+    }
+
+    protected LabFragmentAccess(AndroidAccess.Fragment labFragment, ArrayList<Object> controllersList, String[] modesString){
+        this(labFragment);
         controllers = controllersList;
         modesPrefix=modesString;
     }
 
-    public static void init(){
+    protected LabFragmentAccess(AndroidAccess.Fragment labFragment){
+        super(labFragment.getObjectReference()); //this object should be a reference to <com.saterskog.cell_lab.i>
+    }
+
+    protected static void init(){
         try {
             ExtraSeekBarClass = Class.forName("com.saterskog.cell_lab.i$a");
-            GenomeEditorViewClass = Class.forName("com.saterskog.cell_lab.i");
+            LabFragmentClass = Class.forName("com.saterskog.cell_lab.i");
             DroplistClass = Class.forName("com.saterskog.cell_lab.i$c");
             CellTypesClass = Class.forName("com.saterskog.cell_lab.h");
-        } catch (ClassNotFoundException e) {
+
+            //Fields
+            //getField() just doesn't retrieve private fields and these are private.
+            genesArray = LabFragmentClass.getDeclaredField("a");
+            genesArray.setAccessible(true);
+            genomeName = LabFragmentClass.getDeclaredField("d");
+            genomeName.setAccessible(true);
+        } catch (Exception e) {
+            Chimera.logException(e);
             throw new RuntimeException(e);
         }
     }
@@ -35,7 +62,7 @@ public class GenomeEditorAccess extends Accessor{
 
     public void showSlider(Slider slider){
         try {
-            Constructor<?> cons = ExtraSeekBarClass.getDeclaredConstructor(GenomeEditorViewClass,String.class,String.class,int.class,CellTypesClass);
+            Constructor<?> cons = ExtraSeekBarClass.getDeclaredConstructor(LabFragmentClass,String.class,String.class,int.class,CellTypesClass);
             cons.setAccessible(true);
             Object extraSeekBar = cons.newInstance(this.getObjectReference(), slider.name, slider.description,slider.propertyIndex,null);
             controllers.add(extraSeekBar);
@@ -46,7 +73,7 @@ public class GenomeEditorAccess extends Accessor{
 
     public void showDroplist(Droplist list){
         try {
-            Constructor<?> cons = DroplistClass.getDeclaredConstructor(GenomeEditorViewClass,String.class,
+            Constructor<?> cons = DroplistClass.getDeclaredConstructor(LabFragmentClass,String.class,
                     String.class,int.class,CellTypesClass,String[].class,int.class,boolean.class);
             cons.setAccessible(true);
             Object extraDroplist = cons.newInstance(this.getObjectReference(), list.name, list.description,list.propertyIndex,null,

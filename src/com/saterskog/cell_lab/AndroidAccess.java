@@ -1,4 +1,4 @@
-package com.saterskog.cell_lab.accessors;
+package com.saterskog.cell_lab;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
@@ -14,25 +14,77 @@ public class AndroidAccess extends Accessor{
 
     private Type accessType;
 
-    public AndroidAccess(Object obj, Type type) {
+    protected AndroidAccess(Object obj, Type type) {
         super(obj);
         this.accessType = type;
     }
 
-    public Type getType(){
+    protected Type getType(){
         return this.accessType;
+    }
+
+    public static class Fragment extends Accessor<Object>{
+        protected Fragment(Object fragmentRef){
+            super(fragmentRef);
+        }
+
+        public AppActivity getActivity(){
+            return getFragmentActivity(this.getObjectReference());
+        }
+    }
+
+    public static class AppActivity extends Accessor<Object>{
+        protected AppActivity(Object activity){
+            super(activity);
+        }
     }
 
     // Reflection utilities for the Android API
 
-    //Fully qualified class names of various android utils
+    //Fully qualified class names of various android utils for dynamic class loading
     private static final String CONTEXT_CLASS = "android.content.Context";
     private static final String DEX_CLASS_LOADER_CLASS = "dalvik.system.DexClassLoader";
     private static final String ASSET_MANAGER_CLASS = "android.content.res.AssetManager";
     private static final String DEX_FILE_CLASS = "dalvik.system.DexFile";
+    private static final String TOAST_WIDGET_CLASS = "android.widget.Toast";
+    private static final String FRAGMENT_CLASS = "android.app.Fragment";
+
+    private static final Class<?> contextClass;
+
+    static {
+        try {
+            contextClass = Class.forName(CONTEXT_CLASS);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static AppActivity getFragmentActivity(Object fragment){
+        try {
+            Class<?> fragmentClass = Class.forName(FRAGMENT_CLASS);
+            Method getActivityMethod = fragmentClass.getMethod("getActivity");
+            Object activity = getActivityMethod.invoke(fragment);
+            return new AppActivity(activity);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void makeToast(AppActivity appActivityContext, String text, boolean stayForLonger){
+        int toastLength = stayForLonger ? 1 : 0;
+        try {
+            Class<?> toastWidgetClass = Class.forName(TOAST_WIDGET_CLASS);
+            Method makeTextMethod = toastWidgetClass.getMethod("makeText", contextClass, CharSequence.class, int.class);
+            Method showMethod = toastWidgetClass.getMethod("show");
+            Object toast = makeTextMethod.invoke(null,appActivityContext.getObjectReference(),text,toastLength);
+            showMethod.invoke(toast);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @SuppressWarnings("unchecked")
-    public static Enumeration<String> getClassesInDexFile(File dexFile){
+    protected static Enumeration<String> getClassesInDexFile(File dexFile){
         try{
             Class<?> dexFileClass = Class.forName(DEX_FILE_CLASS);
             Constructor<?> cons = dexFileClass.getDeclaredConstructor(File.class);
@@ -45,7 +97,7 @@ public class AndroidAccess extends Accessor{
         }
     }
 
-    public static Object dexClassLoaderInit(String path, ClassLoader classLoader){
+    protected static Object dexClassLoaderInit(String path, ClassLoader classLoader){
         try{
             Class<?> dexClassLoaderClass = Class.forName(DEX_CLASS_LOADER_CLASS);
             Constructor<?> cons = dexClassLoaderClass.getDeclaredConstructor(String.class,String.class,String.class,ClassLoader.class);
@@ -56,17 +108,16 @@ public class AndroidAccess extends Accessor{
         }
     }
 
-    public static ClassLoader getClassLoader(Object context){
+    protected static ClassLoader getClassLoader(AppActivity context){
         try {
-            Class<?> contextClass = Class.forName(CONTEXT_CLASS);
             Method getClassLoaderMethod = contextClass.getMethod("getClassLoader");
-            return (ClassLoader) getClassLoaderMethod.invoke(context);
+            return (ClassLoader) getClassLoaderMethod.invoke(context.getObjectReference());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static Class<?> loadClass(Object dexClassLoaderInstance, String className){
+    protected static Class<?> loadClass(Object dexClassLoaderInstance, String className){
         try{
             Class<?> dexClassLoaderClass = Class.forName(DEX_CLASS_LOADER_CLASS);
             Method loadClassMethod = dexClassLoaderClass.getMethod("loadClass", String.class);
@@ -76,11 +127,10 @@ public class AndroidAccess extends Accessor{
         }
     }
 
-    private static Object getAssetManager(Object context) {
+    private static Object getAssetManager(AppActivity appActivityContext) {
         try {
-            Class<?> contextClass = Class.forName(CONTEXT_CLASS);
             Method getAssetsMethod = contextClass.getMethod("getAssets");
-            return getAssetsMethod.invoke(context);
+            return getAssetsMethod.invoke(appActivityContext.getObjectReference());
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -98,14 +148,13 @@ public class AndroidAccess extends Accessor{
 
     /**
      * Gets the app's private external files directory (Android/data/com.saterskog.cell_lab/files/).
-     * @param context The Context object.
+     * @param appActivityContext The Context object.
      * @return File object representing the directory.
      */
-    public static File getExternalFilesDir(Object context) {
+    protected static File getExternalFilesDir(AppActivity appActivityContext) {
         try {
-            Class<?> contextClass = Class.forName(CONTEXT_CLASS);
             Method getExternalFilesDirMethod = contextClass.getMethod("getExternalFilesDir", String.class);
-            return (File) getExternalFilesDirMethod.invoke(context, (Object) null);  // null for default dir
+            return (File) getExternalFilesDirMethod.invoke(appActivityContext.getObjectReference(), (Object) null);  // null for default dir
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -117,7 +166,7 @@ public class AndroidAccess extends Accessor{
      * @param dir The directory to list.
      * @return List of file names
      */
-    public static List<String> listFiles(File dir) {
+    protected static List<String> listFiles(File dir) {
         List<String> fileNames = new ArrayList<>();
         try {
             if (dir != null && dir.isDirectory()) {
@@ -139,7 +188,7 @@ public class AndroidAccess extends Accessor{
      * @param jarFile The JAR file to read.
      * @return Map of key-value pairs from the manifest, or empty map if failed.
      */
-    public static Map<String, String> readModManifest(File jarFile) {
+    protected static Map<String, String> readModManifest(File jarFile) {
         Map<String, String> manifestData = new HashMap<>();
         try (JarFile jar = new JarFile(jarFile)) {
             ZipEntry manifestEntry = jar.getEntry("mod_manifest.yml");

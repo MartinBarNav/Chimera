@@ -1,24 +1,13 @@
-package com.saterskog.cell_lab.accessors;
+package com.saterskog.cell_lab;
 
-import java.io.ObjectInputStream;
-
-//Wrapper
 public class GeneProperty<T extends Number> {
     private int index;
     private T minimumValue, maximumValue;
-    private Object ownerMod;
     protected Object type;
+    private boolean savable;
 
     protected GeneProperty(int index){
         this.index = index;
-    }
-
-    protected void setMod(Object mod){
-        this.ownerMod = mod;
-    }
-
-    protected Object getMod(){
-        return this.ownerMod;
     }
 
     protected void setMinimumValue(T minimumValue) {
@@ -41,7 +30,7 @@ public class GeneProperty<T extends Number> {
         return this.index;
     }
 
-    public void readFromStream(ObjectInputStream stream){
-
+    public boolean isSavable(){
+        return this.savable;
     }
 }
